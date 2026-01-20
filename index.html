@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>寶貝瘦身計劃 - 全能管理版</title>
+    <title>寶貝瘦身計劃 - 專業管理版</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #ff6b6b; --success: #51cf66; --warning: #fcc419; --bg: #f8f9fa; --text: #343a40; }
+        :root { --primary: #ff6b6b; --success: #51cf66; --bg: #f8f9fa; --text: #343a40; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .main-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 1000px; margin: 0 auto; }
         .left-column { flex: 1; min-width: 320px; max-width: 450px; }
@@ -28,19 +28,21 @@
         .admin-section { border-bottom: 1px solid #495057; padding-bottom: 15px; margin-bottom: 15px; }
         .admin-input { width: 100%; padding: 8px; margin: 5px 0; border-radius: 5px; border: none; box-sizing: border-box; }
         .lock-icon { text-align: center; color: #adb5bd; cursor: pointer; margin: 40px 0; font-size: 0.8rem; text-decoration: underline; }
+        .week-manager-item { display: flex; justify-content: space-between; align-items: center; background: #343a40; padding: 8px; margin-bottom: 5px; border-radius: 5px; }
+        .del-btn { background: #e03131; color: white; padding: 4px 8px; font-size: 0.7rem; border-radius: 4px; }
     </style>
 </head>
 <body>
     <div class="main-container">
         <div class="left-column">
             <div class="card">
-                <h1>🍫 瘦身馬甲線計劃</h1>
+                <h1 id="title">🍫 瘦身馬甲線計劃</h1>
                 <div class="dashboard">
                     <div class="stat-box"><span>月底預計領取</span><span class="stat-value" id="totalBonus" style="color:var(--success)">NT$ 0</span></div>
                     <div class="stat-box"><span>累計罰款</span><span class="stat-value" id="totalFine" style="color:var(--primary)">NT$ 0</span></div>
                 </div>
             </div>
-            <div id="app">同步中...</div>
+            <div id="app">連線中...</div>
             <div id="settleArea" style="text-align:center; padding: 10px;">
                 <button onclick="processSettlement()" style="background:var(--primary); color:white; width:100%; padding:15px; font-size:1.1rem; border-radius:15px;">🏁 結算本月獎金</button>
                 <div id="settleResult" style="display:none; margin-top:15px; padding:15px; border-radius:10px; font-weight:bold; white-space: pre-line;"></div>
@@ -60,23 +62,23 @@
                 
                 <div class="admin-section">
                     <label>守則修改 (每行一條):</label>
-                    <textarea id="editRules" class="admin-input" style="height:100px;"></textarea>
+                    <textarea id="editRules" class="admin-input" style="height:80px;"></textarea>
                 </div>
 
                 <div class="admin-section">
-                    <label>每週獎金 NT$:</label>
-                    <input type="number" id="editBonus" class="admin-input">
+                    <label>每週獎金 NT$ / 登入密碼 / 提示:</label>
+                    <input type="number" id="editBonus" class="admin-input" placeholder="週獎金">
+                    <input type="text" id="editPw" class="admin-input" placeholder="新密碼">
+                    <input type="text" id="editHint" class="admin-input" placeholder="密碼提示">
                 </div>
 
                 <div class="admin-section">
-                    <label>修改後台密碼:</label>
-                    <input type="text" id="editPw" class="admin-input">
-                    <label>修改密碼提示:</label>
-                    <input type="text" id="editHint" class="admin-input">
+                    <label>📅 週數管理 (可單獨刪除):</label>
+                    <div id="weekManagerList" style="margin-top:10px;"></div>
+                    <button onclick="addNewWeek()" style="background:#4dabf7; color:white; width:100%; margin-top:10px;">➕ 新增一週</button>
                 </div>
 
-                <button onclick="addNewWeek()" style="background:#4dabf7; color:white; width:100%; margin-bottom:10px;">➕ 新增一週計畫</button>
-                <button onclick="saveAdminSettings()" style="background:var(--success); color:white; width:100%;">💾 儲存所有設定</button>
+                <button onclick="saveAdminSettings()" style="background:var(--success); color:white; width:100%; padding:15px; font-size:1rem;">💾 儲存並更新所有設定</button>
                 <button onclick="fullReset()" style="background:var(--primary); color:white; width:100%; margin-top:20px; font-size:0.8rem;">⚠️ 全部清除重新開始</button>
                 <button onclick="closeAdmin()" style="background:#666; color:white; width:100%; margin-top:10px;">關閉後台</button>
             </div>
@@ -84,6 +86,7 @@
     </div>
 
     <script>
+        // --- Firebase 配置 (維持原樣) ---
         const firebaseConfig = {
             apiKey: "AIzaSyA0ihW3ZPIrEHLPay1_psV_qrUn9jqAtuU",
             authDomain: "babyhan-11286.firebaseapp.com",
@@ -94,7 +97,7 @@
             appId: "1:972062726412:web:ef33e8cfb60305f388d129"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('dietDataV3');
+        const db = firebase.database().ref('dietDataV4');
 
         let data = {
             rules: ["早餐要吃的健康", "中餐可以吃飽", "嚴禁飲料下午茶", "晚餐要吃健康"],
@@ -124,7 +127,6 @@
                     else if(status === 'cheat') { dotClass = 'cheat'; dotText = '✕'; }
                     historyDots += `<span class="day-dot ${dotClass}">${dotText}</span>`;
                 }
-
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
@@ -138,9 +140,9 @@
                     <div class="btn-group">
                         <button style="background:#ebfbee; color:green;" onclick="addStep(${index}, 'success')">✅ 完成</button>
                         <button style="background:#fff5f5; color:red;" onclick="addStep(${index}, 'cheat')">🚨 偷吃</button>
-                        <button style="background:#f1f3f5; color:gray; font-size:0.7rem; flex:0.5;" onclick="resetWeek(${index})">重置</button>
+                        <button style="background:#f1f3f5; color:gray; font-size:0.7rem; flex:0.4;" onclick="resetWeek(${index})">重置</button>
                     </div>
-                    <textarea placeholder="點此紀錄偷吃了什麼..." onchange="updateNote(${index}, this.value)">${week.note || ''}</textarea>
+                    <textarea placeholder="紀錄..." onchange="updateNote(${index}, this.value)">${week.note || ''}</textarea>
                 `;
                 app.appendChild(card);
             });
@@ -150,9 +152,8 @@
             
             const res = document.getElementById('settleResult');
             if(data.settled) {
-                res.style.display = 'block';
-                res.style.background = currentBonus > 0 ? '#d3f9d8' : '#ffe3e3';
-                res.innerText = currentBonus > 0 ? `🎉 最終領取：NT$ ${currentBonus} \n 💖 瘦身成功！去找朕領賞！` : `👺 全軍覆沒 \n 罰款記得繳清！`;
+                res.style.display = 'block'; res.style.background = currentBonus > 0 ? '#d3f9d8' : '#ffe3e3';
+                res.innerText = currentBonus > 0 ? `🎉 最終領取：NT$ ${currentBonus} \n 💖 去找朕領賞！` : `👺 全軍覆沒 \n 記得繳清罰款！`;
             } else { res.style.display = 'none'; }
         }
 
@@ -160,8 +161,7 @@
         function addStep(idx, type) {
             if(data.settled) return;
             const w = data.weeks[idx];
-            if(!w.history) w.history = [];
-            if(w.history.length >= 7) return alert("紀錄已滿");
+            if(!w.history || w.history.length >= 7) return;
             if(type === 'cheat') {
                 w.cheats++; data.totalFine += 100;
                 if(w.cheats >= 3) w.failed = true;
@@ -172,39 +172,66 @@
         function updateWeekDate(idx, v) { data.weeks[idx].dateRange = v; db.set(data); }
         function updateNote(idx, v) { data.weeks[idx].note = v; db.set(data); }
         function resetWeek(idx) { if(confirm("確定重置本週數據？")) { data.weeks[idx] = {cheats:0, failed:false, dateRange:"設定日期", note:"", history:[]}; db.set(data); } }
-        function processSettlement() { if(confirm("確定要結算本月獎金嗎？")) { data.settled = true; db.set(data); } }
+        function processSettlement() { if(confirm("確定要結算嗎？")) { data.settled = true; db.set(data); } }
 
-        // 管理員後台
+        // --- 管理員後台功能 ---
         function openAdmin() {
             const pw = prompt(`管理員登入\n提示：${data.pwHint}`);
             if (pw === data.password) {
                 document.getElementById('adminPanel').style.display = 'block';
-                document.getElementById('editRules').value = data.rules.join('\n');
-                document.getElementById('editBonus').value = data.weekBonus;
-                document.getElementById('editPw').value = data.password;
-                document.getElementById('editHint').value = data.pwHint;
+                updateAdminView();
             } else if(pw !== null) { alert("密碼錯誤"); }
         }
+
+        function updateAdminView() {
+            document.getElementById('editRules').value = data.rules.join('\n');
+            document.getElementById('editBonus').value = data.weekBonus;
+            document.getElementById('editPw').value = data.password;
+            document.getElementById('editHint').value = data.pwHint;
+            
+            const mList = document.getElementById('weekManagerList');
+            mList.innerHTML = '';
+            data.weeks.forEach((w, i) => {
+                mList.innerHTML += `
+                    <div class="week-manager-item">
+                        <span>第 ${i+1} 週 (${w.dateRange})</span>
+                        <button class="del-btn" onclick="deleteWeek(${i})">刪除</button>
+                    </div>
+                `;
+            });
+        }
+
         function saveAdminSettings() {
             data.rules = document.getElementById('editRules').value.split('\n').filter(r => r.trim() !== "");
             data.weekBonus = document.getElementById('editBonus').value;
             data.password = document.getElementById('editPw').value;
             data.pwHint = document.getElementById('editHint').value;
             db.set(data);
-            alert("設定已同步雲端！");
+            alert("雲端設定已儲存！");
             closeAdmin();
         }
+
         function addNewWeek() {
             data.weeks.push({cheats:0, failed:false, dateRange:"新的一週", note:"", history:[]});
             db.set(data);
-            alert("已新增一週計畫！");
+            updateAdminView();
         }
+
+        function deleteWeek(index) {
+            if(confirm(`確定要刪除「第 ${index+1} 週」嗎？此動作無法復原！`)) {
+                data.weeks.splice(index, 1);
+                db.set(data);
+                updateAdminView();
+            }
+        }
+
         function fullReset() {
-            if(confirm("⚠️ 注意！這將清空所有進度與罰款，開啟新的一月。確定嗎？")) {
+            if(confirm("⚠️ 全部清除重新開始？")) {
                 data.totalFine = 0; data.settled = false;
                 data.weeks = Array(4).fill().map(() => ({ cheats: 0, failed: false, dateRange: "設定日期", note: "", history: [] }));
                 db.set(data);
-                alert("已全部重置！");
+                updateAdminView();
+                alert("已重置！");
             }
         }
         function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
