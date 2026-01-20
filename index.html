@@ -8,28 +8,23 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
         :root { --primary: #ff6b6b; --success: #51cf66; --bg: #f8f9fa; --text: #343a40; --rule-head: #343a40; --rule-text: #343a40; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); transition: 0.3s; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
         .main-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 1000px; margin: 0 auto; }
         .left-column { flex: 1; min-width: 320px; max-width: 450px; }
-        .card { background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 20px; }
-        .stat-box { text-align: center; padding: 12px; background: #f8f9fa; border-radius: 15px; border: 1px solid #eee; }
-        .stat-value { font-size: 1.3rem; font-weight: 800; display: block; margin-top: 5px; }
-        .rule-card { background: #fff; border-left: 6px solid var(--primary); padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: sticky; top: 20px; }
-        .red-text { color: #e03131; font-weight: bold; text-decoration: underline; }
-        #ruleList { color: var(--rule-text); padding-left: 20px; line-height: 2; font-size: 1.05rem; }
-        .day-dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #eee; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; background: white; }
+        .card { background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 20px; }
+        .stat-box { text-align: center; padding: 12px; background: #f8f9fa; border-radius: 12px; border: 1px solid #eee; }
+        .stat-value { font-size: 1.2rem; font-weight: 800; display: block; margin-top: 5px; }
+        .rule-card { background: #fff; border-left: 6px solid var(--primary); padding: 25px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .day-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #eee; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; background: white; }
         .day-dot.success { background-color: var(--success); border-color: var(--success); color: white; }
         .day-dot.cheat { background-color: var(--primary); border-color: var(--primary); color: white; }
-        button { padding: 12px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        button:active { transform: scale(0.95); }
-        .note-toggle { font-size: 0.85rem; color: #868e96; cursor: pointer; text-align: center; margin-top: 15px; text-decoration: underline; }
-        .note-content { display: none; margin-top: 10px; border-top: 1px dashed #ddd; padding-top: 10px; }
-        textarea { width: 100%; height: 60px; border: 1px solid #eee; border-radius: 10px; padding: 10px; box-sizing: border-box; font-size: 0.9rem; resize: none; }
-        #adminView { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; overflow-y: auto; padding: 30px; box-sizing: border-box; }
-        .admin-section { background: #f8f9fa; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #eee; }
-        .admin-label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; color: #555; font-size: 0.9rem; }
-        .admin-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .settle-result { font-size: 1.2rem; font-weight: bold; margin-top: 20px; padding: 20px; border-radius: 15px; white-space: pre-line; text-align: center; }
+        button { padding: 10px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        textarea { width: 100%; height: 50px; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; padding: 8px; box-sizing: border-box; resize: none; }
+        
+        #adminView { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; overflow-y: auto; padding: 20px; }
+        .admin-section { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
+        .admin-input { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .note-content { display: none; }
     </style>
 </head>
 <body>
@@ -37,48 +32,53 @@
     <div id="userView" class="main-container">
         <div class="left-column">
             <div class="card">
-                <h1 style="color:var(--primary); text-align:center; margin:0 0 15px 0;">🍫 寶貝瘦身計劃</h1>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="stat-box"><span>月底領取</span><span class="stat-value" id="totalBonus" style="color:var(--success)">$0</span></div>
-                    <div class="stat-box"><span>累計罰款</span><span class="stat-value" id="totalFine" style="color:var(--primary)">$0</span></div>
+                <h1 style="color:var(--primary); text-align:center; margin-top:0;">🍫 寶貝瘦身計劃</h1>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="stat-box"><span>月底領賞獎金</span><span class="stat-value" id="totalBonus" style="color:var(--success)">$0</span></div>
+                    <div class="stat-box"><span>本月累計罰款</span><span class="stat-value" id="totalFine" style="color:var(--primary)">$0</span></div>
                 </div>
             </div>
-            <div id="app">同步中...</div>
-            <button onclick="processSettlement()" style="background:var(--primary); color:white; width:100%; padding:18px; font-size:1.1rem; border-radius:18px; box-shadow: 0 10px 20px rgba(255,107,107,0.2);">🏁 結算本月獎金</button>
-            <div id="settleResult" class="settle-result" style="display:none;"></div>
-            <button style="background:none; border:1px solid #eee; color:#ccc; margin:50px auto; display:block; padding:8px 20px;" onclick="checkAdmin()">🔒 管理中心</button>
+            <div id="app">載入中...</div>
+            <button onclick="processSettlement()" style="background:var(--primary); color:white; width:100%; padding:15px; font-size:1.1rem; border-radius:15px;">🏁 結算本月獎金</button>
+            <div id="settleResult" style="display:none; margin-top:20px; padding:20px; border-radius:15px; text-align:center; font-weight:bold; white-space:pre-line;"></div>
+            <button style="background:none; color:#ccc; margin:30px auto; display:block;" onclick="checkAdmin()">🔒 管理中心</button>
         </div>
-        <div class="right-column" style="flex: 0.8; min-width: 300px;">
+        <div style="flex: 0.8; min-width: 300px;">
             <div class="rule-card">
                 <h2 id="ruleHead">📜 減肥作戰守則</h2>
-                <ul id="ruleList"></ul>
+                <ul id="ruleList" style="line-height:2;"></ul>
             </div>
         </div>
     </div>
 
     <div id="adminView">
-        <div style="max-width:600px; margin:0 auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-                <h2 style="margin:0;">🛠️ 管理中心</h2>
-                <button onclick="exitAdmin()" style="background:#eee; color:#666;">關閉</button>
+        <h2 style="display:flex; justify-content:space-between;">🛠️ 管理中心 <button onclick="exitAdmin()" style="background:#eee;">關閉</button></h2>
+        
+        <div class="admin-section">
+            <b>🎨 色彩與規則</b>
+            <label style="display:block; margin-top:10px;">守則 (每行一條):</label>
+            <textarea id="editRules" class="admin-input" style="height:80px;"></textarea>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <label>主題色 <input type="color" id="colorPrimary" class="admin-input"></label>
+                <label>背景色 <input type="color" id="colorBg" class="admin-input"></label>
             </div>
-            
-            <div class="admin-section">
-                <b style="color:var(--primary)">🎨 色彩與內容設定</b>
-                <label class="admin-label">守則內容 (每行一條):</label>
-                <textarea id="editRules" class="admin-input" style="height:100px;"></textarea>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div><label class="admin-label">主題色</label><input type="color" id="colorPrimary" class="admin-input"></div>
-                    <div><label class="admin-label">背景色</label><input type="color" id="colorBg" class="admin-input"></div>
-                </div>
-                <label class="admin-label">後台密碼:</label><input type="text" id="editPw" class="admin-input">
-                <label class="admin-label">密碼提示:</label><input type="text" id="editHint" class="admin-input">
-                <label class="admin-label">每週獎金:</label><input type="number" id="editBonus" class="admin-input">
-            </div>
-
-            <button onclick="saveAdminSettings()" style="background:var(--success); color:white; width:100%; padding:18px; font-size:1.1rem; border-radius:15px; margin-bottom:15px;">💾 儲存並更新</button>
-            <button onclick="fullReset()" style="background:#ced4da; color:#495057; width:100%; padding:15px; border-radius:15px; font-size:0.9rem;">⚠️ 開啟新的一月 (全部重置)</button>
         </div>
+
+        <div class="admin-section">
+            <b>🔑 安全與獎金</b><br>
+            密碼: <input type="text" id="editPw" class="admin-input">
+            提示: <input type="text" id="editHint" class="admin-input">
+            週獎金: <input type="number" id="editBonus" class="admin-input">
+        </div>
+
+        <div class="admin-section">
+            <b>📅 週數管理</b>
+            <div id="weekManagerItems" style="margin-top:10px;"></div>
+            <button onclick="addNewWeek()" style="background:var(--success); color:white; width:100%; margin-top:10px;">➕ 新增一週</button>
+        </div>
+
+        <button onclick="saveAdminSettings()" style="background:var(--primary); color:white; width:100%; padding:15px; font-size:1.1rem; border-radius:10px;">💾 儲存設定</button>
+        <button onclick="fullReset()" style="background:#ccc; width:100%; margin-top:10px;">⚠️ 重置整月 (新開始)</button>
     </div>
 
     <script>
@@ -92,101 +92,103 @@
             appId: "1:972062726412:web:ef33e8cfb60305f388d129"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('dietData_ProductionV1');
+        const db = firebase.database().ref('dietData_StableV1');
 
         let data = {
-            theme: { primary: "#ff6b6b", bg: "#f8f9fa", ruleHead: "#343a40", ruleText: "#343a40" },
-            rules: ["1. 早餐要吃的健康。", "2. 中餐可以吃飽，但不能太多。", "3. 嚴禁飲料、下午茶、餅乾。", "4. 晚餐必須要吃，但要吃健康。"],
+            theme: { primary: "#ff6b6b", bg: "#f8f9fa" },
+            rules: ["早餐吃健康", "嚴禁飲料、下午茶、餅乾", "晚餐吃健康"],
             weekBonus: 1000, password: "520", pwHint: "0520", totalFine: 0, settled: false,
-            weeks: Array(4).fill().map((_,i) => ({ cheats: 0, failed: false, dateRange: "設定日期", note: "", history: [] }))
+            weeks: Array(4).fill().map(() => ({ cheats: 0, failed: false, dateRange: "日期", note: "", history: [] }))
         };
 
-        db.on('value', (s) => { if(s.val()) { data = s.val(); applyTheme(); render(); } else { db.set(data); } });
+        db.on('value', (s) => { if(s.val()) { data = s.val(); updateUI(); } else { db.set(data); } });
 
-        function applyTheme() {
+        function updateUI() {
             document.documentElement.style.setProperty('--primary', data.theme.primary);
             document.documentElement.style.setProperty('--bg', data.theme.bg);
-        }
-
-        function render() {
-            document.getElementById('ruleList').innerHTML = data.rules.map(r => `<li>${r.replace("嚴禁飲料、下午茶、餅乾", '<span class="red-text">嚴禁飲料、下午茶、餅乾</span>').replace("晚餐", '<span class="red-text">晚餐</span>')}</li>`).join('');
+            document.getElementById('ruleList').innerHTML = data.rules.map(r => `<li>${r.replace(/嚴禁飲料、下午茶、餅乾|晚餐/g, '<b style="color:red;text-decoration:underline;">$&</b>')}</li>`).join('');
+            
             const app = document.getElementById('app'); app.innerHTML = '';
             let currentBonus = 0;
 
-            data.weeks.forEach((week, index) => {
-                if (!week.failed) currentBonus += parseInt(data.weekBonus);
+            data.weeks.forEach((w, i) => {
+                if (!w.failed) currentBonus += parseInt(data.weekBonus);
                 let dots = '';
-                for(let i=0; i<7; i++){
-                    const status = week.history ? week.history[i] : undefined;
-                    dots += `<span class="day-dot ${status === 'success' ? 'success' : (status === 'cheat' ? 'cheat' : '')}">${status === 'success' ? '✓' : (status === 'cheat' ? '✕' : '')}</span>`;
+                for(let j=0; j<7; j++){
+                    const status = w.history ? w.history[j] : undefined;
+                    dots += `<span class="day-dot ${status||''}"> ${status==='success'?'✓':status==='cheat'?'✕':''} </span>`;
                 }
-                const card = document.createElement('div'); card.className = 'card';
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; font-weight:800;"><span>第 ${index + 1} 週</span><span style="color:${week.failed ? 'red' : 'var(--success)'}">${week.failed ? '🚨 歸零' : '$'+data.weekBonus}</span></div>
-                    <input style="border:none; color:#888; font-size:0.8rem; width:100%; margin:8px 0; background:none;" value="${week.dateRange}" onchange="updateWeekDate(${index}, this.value)">
-                    <div style="text-align:center; font-size:0.9rem; margin-bottom:12px;">本週違規：<b style="color:var(--primary)">${week.cheats}</b> / 3</div>
-                    <div style="display:flex; justify-content:center; gap:8px;">${dots}</div>
+                const div = document.createElement('div'); div.className = 'card';
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>第 ${i+1} 週</span><span style="color:${w.failed?'red':'green'}">${w.failed?'獎金歸零':'領賞 $'+data.weekBonus}</span></div>
+                    <input style="border:none; color:#888; font-size:0.8rem; background:none;" value="${w.dateRange}" onchange="updateWeekDate(${i}, this.value)">
+                    <div style="text-align:center; font-size:0.9rem; margin:10px 0;">違規：<b style="color:var(--primary)">${w.cheats}</b> / 3</div>
+                    <div style="display:flex; justify-content:center; gap:5px;">${dots}</div>
                     <div style="display:flex; gap:10px; margin-top:15px;">
-                        <button style="flex:1; background:#ebfbee; color:var(--success); border:1px solid var(--success);" onclick="addStep(${index}, 'success')">✅ 完成</button>
-                        <button style="flex:1; background:#fff5f5; color:var(--primary); border:1px solid var(--primary);" onclick="addStep(${index}, 'cheat')">🚨 偷吃</button>
-                        <button style="flex:0.4; background:#f8f9fa; color:#ccc; font-size:0.7rem;" onclick="resetWeek(${index})">重置</button>
+                        <button style="flex:1; background:#ebfbee; color:green;" onclick="addLog(${i}, 'success')">✅ 完成</button>
+                        <button style="flex:1; background:#fff5f5; color:red;" onclick="addLog(${i}, 'cheat')">🚨 偷吃</button>
+                        <button style="flex:0.3; background:#eee; font-size:0.7rem;" onclick="resetW(${i})">重置</button>
                     </div>
-                    <div class="note-toggle" onclick="toggleNote(${index})">📝 備註</div>
-                    <div id="note-${index}" class="note-content"><textarea onchange="updateNote(${index}, this.value)">${week.note || ''}</textarea></div>
+                    <div onclick="this.nextElementSibling.style.display='block'" style="cursor:pointer; color:#999; text-align:center; font-size:0.8rem; margin-top:10px;">📝 展開備註</div>
+                    <textarea class="note-content" onchange="updateNote(${i}, this.value)">${w.note||''}</textarea>
                 `;
-                app.appendChild(card);
+                app.appendChild(div);
             });
-            document.getElementById('totalBonus').innerText = `$${currentBonus.toLocaleString()}`;
-            document.getElementById('totalFine').innerText = `$${data.totalFine.toLocaleString()}`;
+            document.getElementById('totalBonus').innerText = `$${currentBonus}`;
+            document.getElementById('totalFine').innerText = `$${data.totalFine}`;
             
-            const resEl = document.getElementById('settleResult');
+            const res = document.getElementById('settleResult');
             if(data.settled) {
-                resEl.style.display = 'block';
+                res.style.display = 'block';
                 const win = currentBonus > 0;
-                resEl.style.backgroundColor = win ? '#d3f9d8' : '#ffe3e3';
-                resEl.style.color = win ? '#2b8a3e' : '#e03131';
-                resEl.innerText = win ? `🎉 最終領取：NT$ ${currentBonus.toLocaleString()} 元 \n 💖 恭喜瘦身成功！去找朕領賞！` : `👺 全軍覆沒 \n 記得去繳清罰款！`;
-            } else { resEl.style.display = 'none'; }
+                res.style.background = win ? '#d3f9d8' : '#ffe3e3';
+                res.innerText = win ? `🎉 最終獎金：NT$ ${currentBonus} \n 💖 恭喜瘦身成功！去找朕領賞！` : `👺 全軍覆沒 \n 記得去繳清罰款！`;
+            } else { res.style.display = 'none'; }
         }
 
-        function addStep(idx, type) {
-            if(data.settled) return alert("已結算。");
-            const w = data.weeks[idx]; if(w.history.length >= 7) return alert("紀錄已滿。");
+        function addLog(idx, type) {
+            if(data.settled) return;
+            const w = data.weeks[idx]; if(!w.history) w.history = []; if(w.history.length >= 7) return;
             if(type === 'cheat') {
                 w.cheats++; data.totalFine += 100;
-                if(w.cheats >= 3) { w.failed = true; alert("獎金掰掰了！💸"); }
-                else { alert("罰款 100 元！💰"); }
-                w.history.push('cheat');
-            } else { w.history.push('success'); }
-            db.set(data);
+                if(w.cheats >= 3) w.failed = true;
+            }
+            w.history.push(type); db.set(data);
         }
 
-        function resetWeek(i) {
-            if (confirm("確定重置本週嗎？該週產生的罰款將會退回。")) {
-                const weekFine = (data.weeks[i].cheats || 0) * 100;
-                data.totalFine = Math.max(0, data.totalFine - weekFine);
+        function resetW(i) {
+            if(confirm("重置該週？罰款將扣回。")) {
+                data.totalFine = Math.max(0, data.totalFine - (data.weeks[i].cheats * 100));
                 data.weeks[i] = { cheats: 0, failed: false, dateRange: "設定日期", note: "", history: [] };
-                data.settled = false;
                 db.set(data);
             }
         }
 
-        function fullReset() {
-            if(confirm("⚠️ 注意！這將重置整個月的數據。確定嗎？")) {
-                data.totalFine = 0; data.settled = false;
-                data.weeks = Array(4).fill().map((_,i) => ({ cheats: 0, failed: false, dateRange: "設定日期", note: "", history: [] }));
-                db.set(data); exitAdmin();
-            }
+        function checkAdmin() { if(prompt(`提示：${data.pwHint}`) === data.password) { document.getElementById('userView').style.display='none'; document.getElementById('adminView').style.display='block'; loadAdmin(); } }
+        function loadAdmin() {
+            document.getElementById('editRules').value = data.rules.join('\n');
+            document.getElementById('colorPrimary').value = data.theme.primary;
+            document.getElementById('colorBg').value = data.theme.bg;
+            document.getElementById('editPw').value = data.password;
+            document.getElementById('editHint').value = data.pwHint;
+            document.getElementById('editBonus').value = data.weekBonus;
+            const mgr = document.getElementById('weekManagerItems'); mgr.innerHTML = '';
+            data.weeks.forEach((w, i) => { mgr.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>第 ${i+1} 週 (${w.dateRange})</span> <button onclick="delWeek(${i})" style="color:red;">刪除</button></div>`; });
         }
-
-        function processSettlement() { if(confirm("確定要結算嗎？")) { data.settled = true; db.set(data); } }
-        function checkAdmin() { const pw = prompt(`提示：${data.pwHint}`); if(pw === data.password) { document.getElementById('userView').style.display = 'none'; document.getElementById('adminView').style.display = 'block'; loadAdmin(); } }
-        function loadAdmin() { document.getElementById('editRules').value = data.rules.join('\n'); document.getElementById('colorPrimary').value = data.theme.primary; document.getElementById('colorBg').value = data.theme.bg; document.getElementById('editPw').value = data.password; document.getElementById('editHint').value = data.pwHint; document.getElementById('editBonus').value = data.weekBonus; }
-        function saveAdminSettings() { data.rules = document.getElementById('editRules').value.split('\n'); data.theme.primary = document.getElementById('colorPrimary').value; data.theme.bg = document.getElementById('colorBg').value; data.password = document.getElementById('editPw').value; data.pwHint = document.getElementById('editHint').value; data.weekBonus = document.getElementById('editBonus').value; db.set(data); alert("已更新！"); exitAdmin(); }
-        function exitAdmin() { document.getElementById('adminView').style.display = 'none'; document.getElementById('userView').style.display = 'flex'; }
-        function toggleNote(i) { const el = document.getElementById(`note-${i}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; }
+        function saveAdminSettings() {
+            data.rules = document.getElementById('editRules').value.split('\n');
+            data.theme = { primary: document.getElementById('colorPrimary').value, bg: document.getElementById('colorBg').value };
+            data.password = document.getElementById('editPw').value; data.pwHint = document.getElementById('editHint').value;
+            data.weekBonus = document.getElementById('editBonus').value;
+            db.set(data); alert("已更新！"); exitAdmin();
+        }
+        function fullReset() { if(confirm("確定開啟新月份？數據將歸零。")) { data.totalFine = 0; data.settled = false; data.weeks = Array(4).fill().map(() => ({ cheats: 0, failed: false, dateRange: "設定日期", note: "", history: [] })); db.set(data); exitAdmin(); } }
+        function exitAdmin() { document.getElementById('adminView').style.display='none'; document.getElementById('userView').style.display='flex'; }
+        function addNewWeek() { data.weeks.push({cheats:0, failed:false, dateRange:"新週", note:"", history:[]}); db.set(data); loadAdmin(); }
+        function delWeek(i) { data.weeks.splice(i,1); db.set(data); loadAdmin(); }
         function updateWeekDate(i, v) { data.weeks[i].dateRange = v; db.set(data); }
         function updateNote(i, v) { data.weeks[i].note = v; db.set(data); }
+        function processSettlement() { if(confirm("結算？")) { data.settled = true; db.set(data); } }
     </script>
 </body>
 </html>
