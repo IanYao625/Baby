@@ -3,126 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>寶貝瘦身計劃</title>
+    <title>寶貝瘦身計劃 - 雲端管理版</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #ff6b6b; --success: #51cf66; --warning: #fcc419; --bg: #f8f9fa; --text: #343a40; }
+        :root { --primary: #ff6b6b; --success: #51cf66; --bg: #f8f9fa; --text: #343a40; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .main-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 1000px; margin: 0 auto; }
-        .left-column { flex: 1; min-width: 320px; max-width: 450px; }
         .card { background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px; }
-        .right-column { flex: 0.8; min-width: 300px; max-width: 400px; }
-        .rule-card { background: #fff; border-left: 5px solid var(--primary); padding: 20px; border-radius: 10px; position: sticky; top: 20px; }
-        .rule-list { line-height: 1.8; list-style: none; padding: 0; }
-        .red-text { color: #e03131; font-weight: bold; text-decoration: underline; }
-        h1 { color: var(--primary); text-align: center; margin: 0 0 15px 0; font-size: 1.4rem; }
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .stat-box { text-align: center; padding: 10px; background: #f8f9fa; border-radius: 10px; border: 1px solid #eee; }
+        .stat-box { text-align: center; padding: 10px; background: #f8f9fa; border-radius: 10px; }
         .stat-value { font-size: 1.2rem; font-weight: bold; display: block; }
-        .val-bonus { color: #2b8a3e; }
-        .val-fine { color: #e03131; }
-        .week-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-        .date-input { border: none; font-size: 0.8rem; color: #868e96; width: 100%; margin: 5px 0; background: transparent; outline: none; }
-        .status-row { text-align: center; margin: 15px 0; background: #fffafb; padding: 10px; border-radius: 10px; }
-        .progress-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-        .day-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; background: white; }
+        .rule-card { background: #fff; border-left: 5px solid var(--primary); padding: 20px; border-radius: 10px; position: sticky; top: 20px; }
+        .day-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; background: white; }
         .day-dot.success { background-color: var(--success); border-color: var(--success); color: white; }
         .day-dot.cheat { background-color: var(--primary); border-color: var(--primary); color: white; }
-        details { margin-top: 15px; border-top: 1px dashed #ddd; padding-top: 10px; }
-        summary { font-size: 0.85rem; color: #868e96; cursor: pointer; }
-        textarea { width: 100%; height: 60px; margin-top: 8px; border: 1px solid #ced4da; border-radius: 5px; padding: 8px; font-size: 0.9rem; resize: none; box-sizing: border-box; }
-        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; min-width: 100px; }
-        .btn-done { background: #ebfbee; color: var(--success); border: 1px solid var(--success); }
-        .btn-cheat { background: #fff5f5; color: var(--primary); border: 1px solid var(--primary); }
-        .btn-reset { background: #f1f3f5; color: #adb5bd; font-size: 0.8rem; }
-        .settle-area { margin-top: 10px; text-align: center; padding: 20px; border-radius: 15px; background: #fff; border: 2px dashed var(--primary); }
-        .btn-settle { background: var(--primary); color: white; width: 100%; font-size: 1.1rem; margin-bottom: 10px; }
-        .btn-danger { background: #ced4da; color: #495057; width: 100%; font-size: 0.9rem; margin-top: 20px; }
-        .settle-result { font-size: 1.5rem; font-weight: bold; margin-top: 15px; display: none; padding: 15px; border-radius: 10px; white-space: pre-line; }
+        .btn-group { display: flex; gap: 8px; margin-top: 10px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        /* 管理員專區樣式 */
+        #adminPanel { display: none; background: #343a40; color: white; padding: 20px; border-radius: 15px; margin-top: 20px; }
+        .admin-input { width: 100%; padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;}
+        .lock-icon { text-align: center; color: #ced4da; cursor: pointer; margin-top: 50px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
     <div class="main-container">
-        <div class="left-column">
+        <div style="flex: 1; min-width: 320px;">
             <div class="card">
-                <h1>🍫 瘦身馬甲線計劃</h1>
+                <h1 id="mainTitle">🍫 瘦身馬甲線計劃</h1>
                 <div class="dashboard">
-                    <div class="stat-box">
-                        <span class="stat-label">月底預計領取</span>
-                        <span class="stat-value val-bonus" id="totalBonus">NT$ 0</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">累計已罰款</span>
-                        <span class="stat-value val-fine" id="totalFine">NT$ 0</span>
-                    </div>
+                    <div class="stat-box"><span>月底預計領取</span><span class="stat-value" id="totalBonus" style="color:var(--success)">NT$ 0</span></div>
+                    <div class="stat-box"><span>累計罰款</span><span class="stat-value" id="totalFine" style="color:var(--primary)">NT$ 0</span></div>
                 </div>
             </div>
-            <div id="app">正在連線雲端資料庫...</div>
-            <div class="settle-area">
-                <button class="btn-settle" onclick="processSettlement()">🏁 四週結束結算點擊</button>
-                <div id="settleResult" class="settle-result"></div>
-                <button class="btn-danger" onclick="fullReset()">⚠️ 開啟新的一月 (全部重置)</button>
-            </div>
+            <div id="app">連線中...</div>
         </div>
-        <div class="right-column">
+
+        <div style="flex: 0.8; min-width: 300px;">
             <div class="rule-card">
-                <h1>📜 減肥作戰守則</h1>
-                <ul class="rule-list">
-                    <li>1. 早餐要吃的健康。</li>
-                    <li>2. 中餐可以吃飽，但不能太多。</li>
-                    <li>3. <span class="red-text">嚴禁飲料、下午茶、餅乾。</span></li>
-                    <li>4. <span class="red-text">晚餐</span>必須要吃，但要吃健康。</li>
-                </ul>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                <p style="font-size: 0.85rem; color: #666;">
-                    💡 即時同步已啟動！兩支手機資料連動中。
-                </p>
+                <h2 id="ruleTitle">📜 減肥作戰守則</h2>
+                <ul id="ruleList" style="padding-left: 20px; line-height: 2;"></ul>
+            </div>
+            
+            <div class="lock-icon" onclick="openAdmin()">🔒 管理員登入</div>
+            
+            <div id="adminPanel">
+                <h3>🛠️ 管理員控制台</h3>
+                <p>修改計畫規則 (每行一條):</p>
+                <textarea id="editRules" class="admin-input" rows="5"></textarea>
+                <p>每週獎金金額:</p>
+                <input type="number" id="editBonus" class="admin-input">
+                <button onclick="saveAdminSettings()" style="background:var(--success); color:white; margin-top:10px;">儲存並立即更新網頁</button>
+                <button onclick="closeAdmin()" style="background:#666; color:white; margin-top:5px;">關閉後台</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- Firebase 配置 ---
         const firebaseConfig = {
             apiKey: "AIzaSyA0ihW3ZPIrEHLPay1_psV_qrUn9jqAtuU",
             authDomain: "babyhan-11286.firebaseapp.com",
-            databaseURL: "https://babyhan-11286-default-rtdb.firebaseio.com", // 如果出錯請檢查這行
+            databaseURL: "https://babyhan-11286-default-rtdb.firebaseio.com",
             projectId: "babyhan-11286",
             storageBucket: "babyhan-11286.firebasestorage.app",
             messagingSenderId: "972062726412",
             appId: "1:972062726412:web:ef33e8cfb60305f388d129"
         };
-        
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('dietData');
+        const db = firebase.database().ref('dietDataV2');
 
-        let data = {};
+        let data = {
+            rules: ["早餐要吃的健康", "中餐可以吃飽，但不能太多", "嚴禁飲料、下午茶、餅乾", "晚餐必須要吃，但要吃健康"],
+            weekBonus: 1000,
+            password: "520", // 預設密碼
+            pwHint: "我們交往的月份加上日期 (例: 0520)",
+            totalFine: 0,
+            weeks: Array(4).fill().map(() => ({ cheats: 0, failed: false, dateRange: "設定日期", history: [] }))
+        };
 
-        // 監聽雲端資料變動
-        db.on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (val) {
-                data = val;
-                render();
-            } else {
-                // 如果資料庫是空的，初始化
-                fullReset(true);
-            }
-        });
-
-        function saveData() {
-            db.set(data);
-        }
+        db.on('value', (s) => { if(s.val()) { data = s.val(); render(); } else { db.set(data); } });
 
         function render() {
+            const list = document.getElementById('ruleList');
+            list.innerHTML = data.rules.map(r => `<li>${r}</li>`).join('');
+            
             const app = document.getElementById('app');
             app.innerHTML = '';
             let currentBonus = 0;
 
             data.weeks.forEach((week, index) => {
-                if (!week.failed) currentBonus += 1000;
+                if (!week.failed) currentBonus += parseInt(data.weekBonus);
                 let historyDots = '';
                 for(let i=0; i<7; i++) {
                     const status = week.history ? week.history[i] : undefined;
@@ -131,78 +102,59 @@
                     else if(status === 'cheat') { dotClass = 'cheat'; dotText = '✕'; }
                     historyDots += `<span class="day-dot ${dotClass}">${dotText}</span>`;
                 }
-
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
-                    <div class="week-header">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold;">
                         <span>第 ${index + 1} 週</span>
-                        <span style="color:${week.failed ? '#e03131' : '#2b8a3e'}">${week.failed ? '⚠️ 已歸零' : '💰 獎金 $1000'}</span>
+                        <span style="color:${week.failed ? 'red' : 'green'}">$${week.failed?0:data.weekBonus}</span>
                     </div>
-                    <input class="date-input" type="text" value="${week.dateRange}" onchange="updateDate(${index}, this.value)">
-                    <div class="status-row">
-                        <div style="font-size:0.9rem; color:#666; margin-bottom:8px;">本週累計違規：<span style="color:var(--primary); font-weight:bold;">${week.cheats}</span> / 3</div>
-                        <div class="progress-row">${historyDots}</div>
-                    </div>
+                    <input style="border:none; color:gray; width:100%;" value="${week.dateRange}" onchange="updateWeekDate(${index}, this.value)">
+                    <div style="margin: 15px 0; display:flex; justify-content:center; gap:5px;">${historyDots}</div>
                     <div class="btn-group">
-                        <button class="btn-done" onclick="addHistory(${index}, 'success')">✅ 今天完成</button>
-                        <button class="btn-cheat" onclick="addHistory(${index}, 'cheat')">🚨 抓到偷吃</button>
-                        <button class="btn-reset" onclick="resetWeek(${index})">重設</button>
+                        <button style="background:#ebfbee; color:green;" onclick="addStep(${index}, 'success')">✅ 完成</button>
+                        <button style="background:#fff5f5; color:red;" onclick="addStep(${index}, 'cheat')">🚨 偷吃</button>
                     </div>
-                    <details><summary>📝 備註...</summary>
-                        <textarea onchange="updateNote(${index}, this.value)">${week.note || ''}</textarea>
-                    </details>
                 `;
                 app.appendChild(card);
             });
-
-            document.getElementById('totalBonus').innerText = `NT$ ${currentBonus.toLocaleString()}`;
-            document.getElementById('totalFine').innerText = `NT$ ${data.totalFine.toLocaleString()}`;
-            
-            const resultDiv = document.getElementById('settleResult');
-            if(data.settled) {
-                resultDiv.style.display = 'block';
-                const win = currentBonus > 0;
-                resultDiv.style.backgroundColor = win ? '#d3f9d8' : '#ffe3e3';
-                resultDiv.style.color = win ? '#2b8a3e' : '#e03131';
-                resultDiv.innerText = win ? `🎉 最終領取：NT$ ${currentBonus.toLocaleString()} 元 \n 💖 去找朕領賞！` : `👺 全軍覆沒 \n 記得去繳清罰款！`;
-            } else { resultDiv.style.display = 'none'; }
+            document.getElementById('totalBonus').innerText = `NT$ ${currentBonus}`;
+            document.getElementById('totalFine').innerText = `NT$ ${data.totalFine}`;
         }
 
-        function addHistory(index, type) {
-            const week = data.weeks[index];
-            if (data.settled) return;
-            if (!week.history) week.history = [];
-            if (week.history.length >= 7) return alert("紀錄已滿！");
-
-            if (type === 'cheat') {
-                week.cheats++;
-                data.totalFine += 100;
-                if (week.cheats >= 3) { week.failed = true; alert("逼逼！獎金 1000 元掰掰了！💸"); }
-                else { alert("抓到！罰款 100 元，請立刻轉帳！💰"); }
-                week.history.push('cheat');
-            } else { week.history.push('success'); }
-            saveData();
-        }
-
-        function updateDate(index, val) { data.weeks[index].dateRange = val; saveData(); }
-        function updateNote(index, val) { data.weeks[index].note = val; saveData(); }
-        function resetWeek(index) {
-            if (confirm("重置本週？")) {
-                data.weeks[index] = { cheats: 0, failed: false, note: "", dateRange: "設定日期", history: [] };
-                data.settled = false;
-                saveData();
+        // 管理功能
+        function openAdmin() {
+            const pw = prompt(`請輸入管理員密碼\n提示：${data.pwHint}`);
+            if (pw === data.password) {
+                document.getElementById('adminPanel').style.display = 'block';
+                document.getElementById('editRules').value = data.rules.join('\n');
+                document.getElementById('editBonus').value = data.weekBonus;
+            } else if (pw !== null) {
+                alert("密碼錯誤！再想想看？");
             }
         }
-        function processSettlement() { if(confirm("確定結算？")) { data.settled = true; saveData(); } }
-        function fullReset(isInit = false) {
-            if(!isInit && !confirm("⚠️ 確定要全部清空重新開始嗎？")) return;
-            data = {
-                totalFine: 0, settled: false,
-                weeks: Array(4).fill().map(() => ({ cheats: 0, failed: false, note: "", dateRange: "設定日期", history: [] }))
-            };
-            saveData();
+
+        function saveAdminSettings() {
+            data.rules = document.getElementById('editRules').value.split('\n').filter(r => r.trim() !== "");
+            data.weekBonus = document.getElementById('editBonus').value;
+            db.set(data);
+            alert("雲端同步成功！網頁已更新。");
+            closeAdmin();
         }
+
+        function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
+        function addStep(idx, type) {
+            const w = data.weeks[idx];
+            if(!w.history) w.history = [];
+            if(w.history.length >= 7) return;
+            if(type === 'cheat') {
+                w.cheats++; data.totalFine += 100;
+                if(w.cheats >= 3) w.failed = true;
+                w.history.push('cheat');
+            } else { w.history.push('success'); }
+            db.set(data);
+        }
+        function updateWeekDate(idx, val) { data.weeks[idx].dateRange = val; db.set(data); }
     </script>
 </body>
 </html>
