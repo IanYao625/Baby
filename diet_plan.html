@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寶貝瘦身計劃</title>
+    <style>
+        :root { --primary: #ff6b6b; --success: #51cf66; --warning: #fcc419; --bg: #f8f9fa; --text: #343a40; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .main-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 1000px; margin: 0 auto; }
+        .left-column { flex: 1; min-width: 320px; max-width: 450px; }
+        .card { background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px; }
+        .right-column { flex: 0.8; min-width: 300px; max-width: 400px; }
+        .rule-card { background: #fff; border-left: 5px solid var(--primary); padding: 20px; border-radius: 10px; position: sticky; top: 20px; }
+        .rule-list { line-height: 1.8; list-style: none; padding: 0; }
+        .red-text { color: #e03131; font-weight: bold; text-decoration: underline; }
+        h1 { color: var(--primary); text-align: center; margin: 0 0 15px 0; font-size: 1.4rem; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-box { text-align: center; padding: 10px; background: #f8f9fa; border-radius: 10px; border: 1px solid #eee; }
+        .stat-value { font-size: 1.2rem; font-weight: bold; display: block; }
+        .val-bonus { color: #2b8a3e; }
+        .val-fine { color: #e03131; }
+        
+        .week-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .date-input { border: none; font-size: 0.8rem; color: #868e96; width: 100%; margin: 5px 0; background: transparent; outline: none; }
+        
+        /* 狀態列 */
+        .status-row { text-align: center; margin: 15px 0; background: #fffafb; padding: 10px; border-radius: 10px; }
+        .cheat-summary { font-size: 1.2rem; letter-spacing: 5px; margin-bottom: 12px; }
+        .progress-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+        .day-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; background: white; }
+        .day-dot.success { background-color: var(--success); border-color: var(--success); color: white; }
+        .day-dot.cheat { background-color: var(--primary); border-color: var(--primary); color: white; }
+
+        details { margin-top: 15px; border-top: 1px dashed #ddd; padding-top: 10px; }
+        summary { font-size: 0.85rem; color: #868e96; cursor: pointer; }
+        textarea { width: 100%; height: 60px; margin-top: 8px; border: 1px solid #ced4da; border-radius: 5px; padding: 8px; font-size: 0.9rem; resize: none; box-sizing: border-box; }
+        
+        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; min-width: 100px; }
+        .btn-done { background: #ebfbee; color: var(--success); border: 1px solid var(--success); }
+        .btn-cheat { background: #fff5f5; color: var(--primary); border: 1px solid var(--primary); }
+        .btn-reset { background: #f1f3f5; color: #adb5bd; font-size: 0.8rem; }
+        
+        .settle-area { margin-top: 10px; text-align: center; padding: 20px; border-radius: 15px; background: #fff; border: 2px dashed var(--primary); }
+        .btn-settle { background: var(--primary); color: white; width: 100%; font-size: 1.1rem; margin-bottom: 10px; }
+        .btn-danger { background: #ced4da; color: #495057; width: 100%; font-size: 0.9rem; margin-top: 20px; }
+        .settle-result { font-size: 1.5rem; font-weight: bold; margin-top: 15px; display: none; padding: 15px; border-radius: 10px; white-space: pre-line; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="left-column">
+            <div class="card">
+                <h1>🍫 瘦身馬甲線計劃</h1>
+                <div class="dashboard">
+                    <div class="stat-box">
+                        <span class="stat-label">月底預計領取</span>
+                        <span class="stat-value val-bonus" id="totalBonus">NT$ 0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">累計已罰款</span>
+                        <span class="stat-value val-fine" id="totalFine">NT$ 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="app"></div>
+
+            <div class="settle-area">
+                <button class="btn-settle" onclick="processSettlement()">🏁 四週結束結算點擊</button>
+                <div id="settleResult" class="settle-result"></div>
+                <button class="btn-danger" onclick="fullReset()">⚠️ 開啟新的一月 (全部重置)</button>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="rule-card">
+                <h1>📜 減肥作戰守則</h1>
+                <ul class="rule-list">
+                    <li>1. 早餐要吃的健康。</li>
+                    <li>2. 中餐可以吃飽，但不能太多。</li>
+                    <li>3. <span class="red-text">嚴禁飲料、下午茶、餅乾。</span></li>
+                    <li>4. <span class="red-text">晚餐</span>必須要吃，但要吃健康。</li>
+                </ul>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                <p style="font-size: 0.85rem; color: #666;">
+                    💡 提示：<br>
+                    - 每週日為放縱日，可暫停紀錄。<br>
+                    - 偷吃三次該週獎金即失效。<br>
+                    - 點擊「✅ 今天完成」顯示綠燈。<br>
+                    - 點擊「🚨 抓到偷吃」顯示紅燈並罰款。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let data = JSON.parse(localStorage.getItem('dietData_vV6')) || {
+            totalFine: 0,
+            settled: false,
+            weeks: [
+                { cheats: 0, failed: false, note: "", dateRange: "1/19 - 1/25", history: [] },
+                { cheats: 0, failed: false, note: "", dateRange: "1/26 - 2/1", history: [] },
+                { cheats: 0, failed: false, note: "", dateRange: "2/2 - 2/8", history: [] },
+                { cheats: 0, failed: false, note: "", dateRange: "2/9 - 2/15", history: [] }
+            ]
+        };
+
+        function saveData() {
+            localStorage.setItem('dietData_vV6', JSON.stringify(data));
+            render();
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            app.innerHTML = '';
+            let currentBonus = 0;
+
+            data.weeks.forEach((week, index) => {
+                if (!week.failed) currentBonus += 1000;
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                // 累積偷吃狀態 (三振用)
+                let cheatSummaryIcons = '';
+                for(let i=0; i<3; i++) cheatIcons = (i < week.cheats) ? '❌' : '⚪';
+
+                // 七天進度紀錄
+                let historyDots = '';
+                for(let i=0; i<7; i++) {
+                    const status = week.history[i]; // 'success' or 'cheat' or undefined
+                    let dotClass = '';
+                    let dotText = '';
+                    if(status === 'success') { dotClass = 'success'; dotText = '✓'; }
+                    else if(status === 'cheat') { dotClass = 'cheat'; dotText = '✕'; }
+                    historyDots += `<span class="day-dot ${dotClass}">${dotText}</span>`;
+                }
+
+                card.innerHTML = `
+                    <div class="week-header">
+                        <span>第 ${index + 1} 週</span>
+                        <span style="color:${week.failed ? '#e03131' : '#2b8a3e'}">${week.failed ? '⚠️ 已歸零' : '💰 獎金 $1000'}</span>
+                    </div>
+                    <input class="date-input" type="text" value="${week.dateRange}" onchange="updateDate(${index}, this.value)">
+                    
+                    <div class="status-row">
+                        <div class="cheat-summary" style="font-size:0.9rem; color:#666; margin-bottom:8px;">
+                            本週累計違規：<span style="color:var(--primary); font-weight:bold;">${week.cheats}</span> / 3
+                        </div>
+                        <div class="progress-row">${historyDots}</div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn-done" onclick="addHistory(${index}, 'success')">✅ 今天完成</button>
+                        <button class="btn-cheat" onclick="addHistory(${index}, 'cheat')">🚨 抓到偷吃</button>
+                        <button class="btn-reset" onclick="resetWeek(${index})">重設</button>
+                    </div>
+                    
+                    <details>
+                        <summary>📝 點擊記錄備註...</summary>
+                        <textarea placeholder="例如：1/21 中午偷吃了一口炸雞..." onchange="updateNote(${index}, this.value)">${week.note}</textarea>
+                    </details>
+                `;
+                app.appendChild(card);
+            });
+
+            document.getElementById('totalBonus').innerText = `NT$ ${currentBonus.toLocaleString()}`;
+            document.getElementById('totalFine').innerText = `NT$ ${data.totalFine.toLocaleString()}`;
+            
+            const resultDiv = document.getElementById('settleResult');
+            if(data.settled) {
+                resultDiv.style.display = 'block';
+                const win = currentBonus > 0;
+                resultDiv.style.backgroundColor = win ? '#d3f9d8' : '#ffe3e3';
+                resultDiv.style.color = win ? '#2b8a3e' : '#e03131';
+                resultDiv.innerText = win ? `🎉 最終領取：NT$ ${currentBonus.toLocaleString()} 元 \n 💖 恭喜瘦身成功！去找朕領賞！` : `👺 全軍覆沒 \n 記得去繳清罰款！`;
+            } else {
+                resultDiv.style.display = 'none';
+            }
+        }
+
+        function addHistory(index, type) {
+            const week = data.weeks[index];
+            if (data.settled) return alert("已結算。");
+            if (week.history.length >= 7) return alert("本週 7 天紀錄已滿囉！");
+
+            if (type === 'cheat') {
+                if (week.failed) {
+                    alert("這週已經失敗了，但還是幫妳紀錄一個 ❌。");
+                } else {
+                    week.cheats++;
+                    data.totalFine += 100;
+                    if (week.cheats >= 3) {
+                        week.failed = true;
+                        alert("逼逼！累計三次，本週獎金 1000 元掰掰了！💸");
+                    } else {
+                        alert("抓到！罰款 100 元，請立刻轉帳到共享帳戶！💰");
+                    }
+                }
+                week.history.push('cheat');
+            } else {
+                week.history.push('success');
+            }
+            saveData();
+        }
+
+        function updateDate(index, value) {
+            data.weeks[index].dateRange = value;
+            saveData();
+        }
+
+        function updateNote(index, value) {
+            data.weeks[index].note = value;
+            saveData();
+        }
+
+        function resetWeek(index) {
+            if (confirm("確定重置本週嗎？(歷史紀錄與獎金狀態將清空)")) {
+                data.weeks[index].cheats = 0;
+                data.weeks[index].history = [];
+                data.weeks[index].failed = false;
+                data.weeks[index].note = "";
+                data.settled = false;
+                saveData();
+            }
+        }
+
+        function processSettlement() {
+            if(confirm("確定要結算本月獎金嗎？")) {
+                data.settled = true;
+                saveData();
+            }
+        }
+
+        function fullReset() {
+            if(confirm("⚠️ 注意！這將清空所有數據，開啟新的一月計劃。確定嗎？")) {
+                data = {
+                    totalFine: 0,
+                    settled: false,
+                    weeks: [
+                        { cheats: 0, failed: false, note: "", dateRange: "1/19 - 1/25", history: [] },
+                        { cheats: 0, failed: false, note: "", dateRange: "1/26 - 2/1", history: [] },
+                        { cheats: 0, failed: false, note: "", dateRange: "2/2 - 2/8", history: [] },
+                        { cheats: 0, failed: false, note: "", dateRange: "2/9 - 2/15", history: [] }
+                    ]
+                };
+                saveData();
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
