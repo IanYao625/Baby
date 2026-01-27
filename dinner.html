@@ -21,7 +21,6 @@
         .nav-btn { flex: 1; padding: 12px; border-radius: 15px; border: none; cursor: pointer; font-weight: bold; color: #fb7185; background: transparent; }
         .nav-btn.active { background: white; color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         
-        /* 新增：金鑰切換器樣式 */
         .key-selector { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; font-size: 0.8rem; }
         .key-tag { padding: 4px 12px; border-radius: 10px; background: rgba(0,0,0,0.05); cursor: pointer; border: 1px solid transparent; }
         .key-tag.active { border-color: var(--primary); color: var(--primary); background: #fff1f2; font-weight: bold; }
@@ -89,13 +88,13 @@
             <input type="text" id="bgUrl" class="admin-input" placeholder="貼上 Google Drive 連結..." onchange="saveAndApplyBg(this.value)">
         </div>
     </div>
-    <div class="footer-ver">寶貝的晚餐 v11.0.2 | 居家私廚簡約版</div>
+    <div class="footer-ver">寶貝的晚餐 v11.0.3 | 居家私廚</div>
 
     <a href="index.html" class="floating-switch">📋 切換瘦身計劃</a>
 
 <script>
     let mode = 'store';
-    let currentKeyIndex = 1; // 預設優先使用金鑰 2
+    let currentKeyIndex = 1;
     let savedFridge = localStorage.getItem('my_fridge_data');
     let myFridge = savedFridge ? JSON.parse(savedFridge) : ['雞蛋', '雞胸肉', '鯛魚', '豆腐', '起司'];
     let selectedTags = [];
@@ -106,6 +105,7 @@
         "AIzaSyBJsHPR1RITHaU6-cnzWevPTjJ3IFVmXaM",
         "AIzaSyDIjyBHJr-pZC0gtrQpJJFwoZzPmZvFpLg"
     ];
+    // 嚴格依照您的四組模型名稱
     const MODELS = [
         "gemini-2.5-flash",
         "gemini-2.5-flash-lite",
@@ -121,9 +121,9 @@
 
     window.onload = function() {
         const savedBg = localStorage.getItem('dinner_bg_url');
-        if (savedBg) { document.getElementById('bgUrl').value = savedBg; applyBgLogic(savedBg); }
+        if (savedBg) { applyBgLogic(savedBg); }
         if(mode === 'chef') initFridge();
-        selectKey(1); // 初始化選中金鑰 2
+        selectKey(1);
     };
 
     function toggleAdmin() { document.getElementById('adminContent').classList.toggle('open'); }
@@ -164,7 +164,6 @@
         document.getElementById('chef-tools').style.display = m==='chef'?'block':'none';
         document.getElementById('title').innerText = m==='store'?'✨ 晚餐吃什麼？':'👨‍🍳 私廚小冰箱';
         document.getElementById('subtitle').innerHTML = m==='store'?'( 🚫 無生菜 / 🚫 無牛奶 / 🎯 減脂優選 )':'( 🥗 食材不限 / 🎯 減脂優選模式 )';
-        document.getElementById('subtitle').style.visibility = 'visible';
         const targetHTML = (m === 'store') ? storeResultHTML : chefResultHTML;
         document.getElementById('result-area').innerHTML = targetHTML;
         if (targetHTML !== "") {
@@ -183,6 +182,9 @@
         document.getElementById('goBtn').style.display = "block";
     }
 
+    // 關鍵：延遲函數，防止 RPM 報錯
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
     async function askAI() {
         const resArea = document.getElementById('result-area');
         const goBtn = document.getElementById('goBtn');
@@ -195,10 +197,7 @@
 
         let success = false;
         let logs = "";
-
-        // 改為從選中的金鑰開始輪詢
-        const startKey = currentKeyIndex;
-        const keyOrder = startKey === 1 ? [1, 0] : [0, 1];
+        const keyOrder = currentKeyIndex === 1 ? [1, 0] : [0, 1];
 
         for (let kIdx of keyOrder) {
             let key = KEYS[kIdx];
@@ -209,7 +208,13 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
-                    if (!response.ok) { logs += `[${model} ERR ${response.status}] `; continue; }
+                    
+                    if (!response.ok) { 
+                        logs += `[${model} ERR ${response.status}] `; 
+                        await sleep(1000); // 失敗時休息 1 秒，避開 RPM 限制
+                        continue; 
+                    }
+                    
                     const data = await response.json();
                     if (data.candidates && data.candidates[0].content) {
                         let aiText = data.candidates[0].content.parts[0].text.replace(/```html|```/g, "").replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -223,7 +228,7 @@
         }
 
         if (!success) {
-            resArea.innerHTML = `<p style="text-align:center; padding:20px; color:red;">🍽️ 主廚能量耗盡！<br><small style="font-size:0.7rem;">${logs}</small></p>`;
+            resArea.innerHTML = `<p style="text-align:center; padding:20px; color:red;">🍽️ 主廚暫時休息中 (RPM 限制)<br><small style="font-size:0.7rem;">請 1 分鐘後再試。錯誤紀錄：${logs}</small></p>`;
         } else {
             if(mode === 'store') document.getElementById('drawBtn').style.display = "block";
             goBtn.style.display = "none";
