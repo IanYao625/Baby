@@ -94,9 +94,12 @@
         "AIzaSyBJsHPR1RITHaU6-cnzWevPTjJ3IFVmXaM",
         "AIzaSyDIjyBHJr-pZC0gtrQpJJFwoZzPmZvFpLg"
     ];
+
+    // 還原為您指定的四種模組名稱
     const MODELS = [
-        "gemini-2.0-flash",
-        "gemini-1.5-flash",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash-tts",
         "gemini-3-flash"
     ];
 
@@ -176,7 +179,7 @@
         let success = false;
         let logs = "";
 
-        // 核心修正：金鑰與模型雙重輪詢
+        // 改進輪詢邏輯：只有在成功獲取資料後才停止
         for (let key of KEYS) {
             if (success) break;
             for (let model of MODELS) {
@@ -186,10 +189,9 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
-                    
-                    // 偵測錯誤碼，若非成功則嘗試下一個
-                    if (!response.ok) {
-                        logs += `[${model} ERR ${response.status}] `;
+
+                    if (!response.ok) { 
+                        logs += `[${model} ERR ${response.status}] `; 
                         continue; 
                     }
 
@@ -199,7 +201,7 @@
                         if (mode === 'store') storeResultHTML = aiText; else chefResultHTML = aiText;
                         resArea.innerHTML = aiText;
                         success = true; 
-                        break;
+                        break; 
                     }
                 } catch (e) { 
                     logs += `[${model} FAIL] `; 
