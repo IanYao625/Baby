@@ -21,7 +21,7 @@
         .nav-btn { flex: 1; padding: 12px; border-radius: 15px; border: none; cursor: pointer; font-weight: bold; color: #fb7185; background: transparent; }
         .nav-btn.active { background: white; color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         
-        /* 金鑰手動切換 UI */
+        /* 金鑰切換 UI */
         .key-selector { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; font-size: 0.8rem; }
         .key-tag { padding: 4px 12px; border-radius: 10px; background: rgba(0,0,0,0.05); cursor: pointer; border: 1px solid transparent; }
         .key-tag.active { border-color: var(--primary); color: var(--primary); background: #fff1f2; font-weight: bold; }
@@ -63,8 +63,8 @@
         </div>
 
         <div class="key-selector">
-            <span id="kt0" class="key-tag" onclick="selectKey(0)">🔑 金鑰 1 (BJsH)</span>
-            <span id="kt1" class="key-tag active" onclick="selectKey(1)">🔑 金鑰 2 (DIjy)</span>
+            <span id="kt0" class="key-tag" onclick="selectKey(0)">🔑 使用金鑰 1</span>
+            <span id="kt1" class="key-tag active" onclick="selectKey(1)">🔑 使用金鑰 2</span>
         </div>
 
         <h2 id="title">✨ 晚餐想吃什麼？</h2>
@@ -89,13 +89,13 @@
             <input type="text" id="bgUrl" class="admin-input" placeholder="貼上 Google Drive 連結..." onchange="saveAndApplyBg(this.value)">
         </div>
     </div>
-    <div class="footer-ver">寶貝的晚餐 v11.0.7 | 居家私廚</div>
+    <div class="footer-ver">寶貝的晚餐 v11.1.0 | 穩定金鑰版</div>
 
     <a href="index.html" class="floating-switch">📋 切換瘦身計劃</a>
 
 <script>
     let mode = 'store';
-    let currentKeyIdx = 1; // 預設金鑰 2
+    let currentKeyIdx = 1; // 預設加載第二金鑰
     let savedFridge = localStorage.getItem('my_fridge_data');
     let myFridge = savedFridge ? JSON.parse(savedFridge) : ['雞蛋', '雞胸肉', '鯛魚', '豆腐', '起司'];
     let selectedTags = [];
@@ -103,12 +103,15 @@
     let chefResultHTML = "";
 
     const KEYS = [
-        "AIzaSyBJsHPR1RITHaU6-cnzWevPTjJ3IFVmXaM",
-        "AIzaSyDIjyBHJr-pZC0gtrQpJJFwoZzPmZvFpLg"
+        "AIzaSyBJsHPR1RITHaU6-cnzWevPTjJ3IFVmXaM", // 金鑰 1
+        "AIzaSyDIjyBHJr-pZC0gtrQpJJFwoZzPmZvFpLg"  // 金鑰 2
     ];
 
-    // 只保留目前最穩定的官方模型名稱
-    const MODELS = ["gemini-1.5-flash", "gemini-1.5-flash-8b"];
+    // 僅鎖定目前有數據的模型
+    const MODELS = [
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite"
+    ];
 
     function selectKey(idx) {
         currentKeyIdx = idx;
@@ -120,7 +123,7 @@
         const savedBg = localStorage.getItem('dinner_bg_url');
         if (savedBg) applyBgLogic(savedBg);
         if(mode === 'chef') initFridge();
-        selectKey(1);
+        selectKey(1); // 預設點擊第二金鑰
     };
 
     function toggleAdmin() { document.getElementById('adminContent').classList.toggle('open'); }
@@ -189,34 +192,38 @@
             `你是居家健身私廚。現有食材：${selectedTags.join(',')}。請規劃2道『減脂優選』的高蛋白食譜。要求：1. 只使用提到的食材。2. 僅使用鹽、黑胡椒、醬油等基本調味。3. 步驟精簡、去浮誇、適合居家快速料理。4. 標註卡路里。格式：<div class='ai-greeting'>[開場]</div><div class='option-card'><b>🍴 [私廚推薦] 品名 (約 XXX kcal)</b><p>🍳 簡單步驟：... </p></div>`;
 
         let success = false;
-        let selectedKey = KEYS[currentKeyIdx];
+        let logs = "";
+        let targetKey = KEYS[currentKeyIdx];
 
-        // 核心修正：只嘗試一個最穩定的模型，避免金鑰被重複刷爆
-        const model = "gemini-1.5-flash"; 
+        for (let model of MODELS) {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${targetKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
 
-        try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${selectedKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.candidates && data.candidates[0].content) {
-                    let aiText = data.candidates[0].content.parts[0].text.replace(/```html|```/g, "").replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    if (mode === 'store') storeResultHTML = aiText; else chefResultHTML = aiText;
-                    resArea.innerHTML = aiText;
-                    success = true;
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.candidates && data.candidates[0].content) {
+                        let aiText = data.candidates[0].content.parts[0].text.replace(/```html|```/g, "").replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                        if (mode === 'store') storeResultHTML = aiText; else chefResultHTML = aiText;
+                        resArea.innerHTML = aiText;
+                        success = true;
+                        break; 
+                    }
+                } else {
+                    logs += `[${model}: ${response.status}] `;
+                    if (response.status === 403) break; // 若被封 IP 則停止嘗試
                 }
-            } else {
-                resArea.innerHTML = `<p style="color:red; text-align:center;">❌ 金鑰 ${currentKeyIdx+1} 拒絕請求 (${response.status})<br><small>Google 目前限制此連線，請等一分鐘再試。</small></p>`;
+            } catch (e) {
+                logs += "連線錯誤 ";
             }
-        } catch (e) {
-            resArea.innerHTML = `<p style="color:red; text-align:center;">❌ 網路連線中斷，請稍後。</p>`;
         }
 
-        if (success) {
+        if (!success) {
+            resArea.innerHTML = `<p style="color:red; text-align:center;">❌ 目前無法獲取資訊 (金鑰 ${currentKeyIdx+1})<br><small>${logs}</small><br><br>請確認金鑰 2 是否已開啟 2.5 系列權限，或稍候再試。</p>`;
+        } else {
             if(mode === 'store') document.getElementById('drawBtn').style.display = "block";
             goBtn.style.display = "none";
             document.getElementById('resetBtn').style.display = "block";
