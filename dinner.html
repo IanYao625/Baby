@@ -21,7 +21,7 @@
         .nav-btn { flex: 1; padding: 12px; border-radius: 15px; border: none; cursor: pointer; font-weight: bold; color: #fb7185; background: transparent; }
         .nav-btn.active { background: white; color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         
-        /* 金鑰切換 UI */
+        /* 金鑰選擇 UI */
         .key-selector { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; font-size: 0.8rem; }
         .key-tag { padding: 4px 12px; border-radius: 10px; background: rgba(0,0,0,0.05); cursor: pointer; border: 1px solid transparent; }
         .key-tag.active { border-color: var(--primary); color: var(--primary); background: #fff1f2; font-weight: bold; }
@@ -63,8 +63,8 @@
         </div>
 
         <div class="key-selector">
-            <span id="kt0" class="key-tag" onclick="selectKey(0)">🔑 使用金鑰 1</span>
-            <span id="kt1" class="key-tag active" onclick="selectKey(1)">🔑 使用金鑰 2</span>
+            <span id="kt0" class="key-tag" onclick="selectKey(0)">🔑 金鑰 1 (BJsH)</span>
+            <span id="kt1" class="key-tag active" onclick="selectKey(1)">🔑 金鑰 2 (DIjy)</span>
         </div>
 
         <h2 id="title">✨ 晚餐想吃什麼？</h2>
@@ -89,13 +89,13 @@
             <input type="text" id="bgUrl" class="admin-input" placeholder="貼上 Google Drive 連結..." onchange="saveAndApplyBg(this.value)">
         </div>
     </div>
-    <div class="footer-ver">寶貝的晚餐 v11.1.0 | 穩定金鑰版</div>
+    <div class="footer-ver">寶貝的晚餐 v11.1.2 | 穩定精確版</div>
 
     <a href="index.html" class="floating-switch">📋 切換瘦身計劃</a>
 
 <script>
     let mode = 'store';
-    let currentKeyIdx = 1; // 預設加載第二金鑰
+    let currentKeyIdx = 1; // 預設使用金鑰 2
     let savedFridge = localStorage.getItem('my_fridge_data');
     let myFridge = savedFridge ? JSON.parse(savedFridge) : ['雞蛋', '雞胸肉', '鯛魚', '豆腐', '起司'];
     let selectedTags = [];
@@ -103,15 +103,12 @@
     let chefResultHTML = "";
 
     const KEYS = [
-        "AIzaSyBJsHPR1RITHaU6-cnzWevPTjJ3IFVmXaM", // 金鑰 1
-        "AIzaSyDIjyBHJr-pZC0gtrQpJJFwoZzPmZvFpLg"  // 金鑰 2
+        "AIzaSyBJsHPR1RITHaU6-cnzWevPTjJ3IFVmXaM",
+        "AIzaSyDIjyBHJr-pZC0gtrQpJJFwoZzPmZvFpLg"
     ];
 
-    // 僅鎖定目前有數據的模型
-    const MODELS = [
-        "gemini-2.5-flash",
-        "gemini-2.5-flash-lite"
-    ];
+    // 僅保留你截圖中顯示 100% 可用的模型系列
+    const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
     function selectKey(idx) {
         currentKeyIdx = idx;
@@ -123,7 +120,7 @@
         const savedBg = localStorage.getItem('dinner_bg_url');
         if (savedBg) applyBgLogic(savedBg);
         if(mode === 'chef') initFridge();
-        selectKey(1); // 預設點擊第二金鑰
+        selectKey(1); // 進入頁面時預設選中金鑰 2
     };
 
     function toggleAdmin() { document.getElementById('adminContent').classList.toggle('open'); }
@@ -193,16 +190,18 @@
 
         let success = false;
         let logs = "";
-        let targetKey = KEYS[currentKeyIdx];
+        let targetKey = KEYS[currentKeyIdx]; // 僅使用當前選中的那把金鑰
 
+        // 核心邏輯修正：不再跨金鑰循環，一次只嘗試當前金鑰下的模型
         for (let model of MODELS) {
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${targetKey}`, {
+                // 加入時間戳避免快取舊錯誤
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${targetKey}&v=${Date.now()}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
-
+                
                 if (response.ok) {
                     const data = await response.json();
                     if (data.candidates && data.candidates[0].content) {
@@ -213,16 +212,19 @@
                         break; 
                     }
                 } else {
-                    logs += `[${model}: ${response.status}] `;
-                    if (response.status === 403) break; // 若被封 IP 則停止嘗試
+                    logs += `[${model} 狀態:${response.status}] `;
+                    if (response.status === 403) {
+                        logs = "頻率過快被暫停，請等一分鐘或換金鑰。";
+                        break; 
+                    }
                 }
             } catch (e) {
-                logs += "連線錯誤 ";
+                logs += "連線逾時 ";
             }
         }
 
         if (!success) {
-            resArea.innerHTML = `<p style="color:red; text-align:center;">❌ 目前無法獲取資訊 (金鑰 ${currentKeyIdx+1})<br><small>${logs}</small><br><br>請確認金鑰 2 是否已開啟 2.5 系列權限，或稍候再試。</p>`;
+            resArea.innerHTML = `<p style="color:red; text-align:center;">❌ 金鑰 ${currentKeyIdx+1} 請求失敗<br><small>${logs}</small></p>`;
         } else {
             if(mode === 'store') document.getElementById('drawBtn').style.display = "block";
             goBtn.style.display = "none";
