@@ -9,6 +9,14 @@
     <style>
         :root { --primary: #ff6b6b; --success: #51cf66; --bg: #f8f9fa; --text: #343a40; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); transition: 0.3s; }
+        
+        /* 頁面頂部導覽列樣式 */
+        .nav-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 25px; width: 100%; max-width: 1000px; margin-left: auto; margin-right: auto; }
+        .nav-btn { padding: 10px 24px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.2s; border: none; font-size: 0.95rem; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+        .nav-active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(255,107,107,0.3); }
+        .nav-inactive { background: white; color: #888; border: 1px solid #eee; }
+        .nav-inactive:hover { background: #fff5f5; color: var(--primary); }
+
         .main-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 1000px; margin: 0 auto; }
         .left-column { flex: 1; min-width: 320px; max-width: 450px; }
         .card { background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 20px; }
@@ -32,6 +40,11 @@
     </style>
 </head>
 <body>
+
+    <div class="nav-container">
+        <button class="nav-btn nav-active" onclick="location.href='index.html'">📋 瘦身計劃</button>
+        <button class="nav-btn nav-inactive" onclick="location.href='dinner.html'">🍽️ 寶貝晚餐</button>
+    </div>
 
     <div id="userView" class="main-container">
         <div class="left-column">
@@ -207,6 +220,7 @@
         function fullReset() { if(confirm("⚠️ 確定重置新月份數據？")) { data.totalFine = 0; data.settled = false; data.weeks = Array(4).fill().map(() => ({ cheats: 0, failed: false, dateRange: "設定日期", note: "", history: [] })); db.set(data); exitAdmin(); } }
         function exitAdmin() { document.getElementById('adminView').style.display='none'; document.getElementById('userView').style.display='flex'; }
         function addNewWeek() { data.weeks.push({cheats:0, failed:false, dateRange:"設定日期", note:"", history:[]}); db.set(data); loadAdmin(); }
+        function findWeek(i) { /* 保持原樣 */ }
         function delWeek(i) { data.weeks.splice(i,1); db.set(data); loadAdmin(); }
         function toggleNote(i) { const el = document.getElementById(`note-${i}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; }
         function updateDate(i, v) { data.weeks[i].dateRange = v; db.set(data); }
