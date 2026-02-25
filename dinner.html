@@ -3,17 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍽️ 晚餐助手 - Gemini 2.5 Flash</title>
+    <title>🍽️ 寶貝晚餐 - 私廚小冰箱</title>
     <style>
-        :root { --primary: #f43f5e; --bg: #fff5f5; }
-        body { font-family: -apple-system, "PingFang TC", sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .nav-container { display: flex; gap: 10px; margin-bottom: 20px; width: 100%; max-width: 400px; }
-        .nav-btn { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #eee; background: white; color: #888; text-decoration: none; text-align: center; font-weight: bold; }
-        .nav-active { background: #ff6b6b; color: white; border: none; }
-        .card { background: white; border-radius: 30px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; box-sizing: border-box; }
-        .go-btn { background: #000; color: white; width: 100%; padding: 16px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; font-size: 1.1rem; margin-top: 15px; }
-        .result-area { text-align: left; margin-top: 20px; color: #444; line-height: 1.6; min-height: 50px; }
-        .debug-msg { font-size: 0.75rem; color: #cc0000; margin-top: 15px; text-align: left; white-space: pre-wrap; background: #fff0f0; padding: 15px; border-radius: 10px; display: none; border: 1px solid #ffccd5; }
+        :root { --primary: #ff6b6b; --secondary: #f06595; --bg: #fff5f5; --card: rgba(255, 255, 255, 0.9); }
+        body { font-family: -apple-system, "PingFang TC", sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; min-height: 100vh; }
+        
+        /* 導航列 */
+        .nav-container { display: flex; gap: 12px; margin-bottom: 20px; width: 100%; max-width: 400px; }
+        .nav-btn { flex: 1; padding: 12px; border-radius: 25px; border: none; background: white; color: #888; text-decoration: none; text-align: center; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .nav-active { background: var(--primary); color: white; }
+
+        /* 私廚小冰箱主卡片 */
+        .main-card { background: var(--card); backdrop-filter: blur(10px); border-radius: 35px; padding: 30px; box-shadow: 0 15px 35px rgba(255, 107, 107, 0.15); width: 100%; max-width: 400px; box-sizing: border-box; text-align: center; border: 2px solid #fff; }
+        
+        .fridge-title { font-size: 1.6rem; color: #444; margin-bottom: 5px; font-weight: 800; letter-spacing: 1px; }
+        .fridge-sub { font-size: 0.85rem; color: #f06595; margin-bottom: 25px; font-weight: 500; }
+
+        /* AI 回覆內容排版 */
+        .result-container { text-align: left; margin-top: 10px; min-height: 120px; }
+        .dish-card { background: white; border-radius: 20px; padding: 15px; margin-bottom: 15px; border-left: 6px solid var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.03); animation: fadeIn 0.5s ease; }
+        .dish-name { font-weight: bold; color: #333; font-size: 1.05rem; display: block; margin-bottom: 5px; }
+        .dish-desc { font-size: 0.9rem; color: #666; line-height: 1.5; }
+
+        /* 啟動按鈕 */
+        .go-btn { background: linear-gradient(135deg, #ff6b6b, #f06595); color: white; width: 100%; padding: 18px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; font-size: 1.1rem; margin-top: 10px; box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3); transition: 0.2s; }
+        .go-btn:active { transform: translateY(2px); box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3); }
+        .go-btn:disabled { background: #ddd; box-shadow: none; cursor: not-allowed; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .status-info { font-size: 0.7rem; color: #ccc; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -23,27 +42,32 @@
         <a href="dinner.html" class="nav-btn nav-active">🍽️ 寶貝晚餐</a>
     </div>
 
-    <div class="card">
-        <h2 style="margin:0 0 10px 0;">✨ 晚餐吃什麼？</h2>
-        <div id="result" class="result-area">正在準備與 Gemini 2.5 Flash 連線...</div>
-        <button class="go-btn" id="askBtn" onclick="callGemini25()">🚀 詢問 Gemini 2.5</button>
-        <div id="debug" class="debug-msg"></div>
+    <div class="main-card">
+        <div class="fridge-title">❄️ 私廚小冰箱</div>
+        <div class="fridge-sub">GEMINI 2.5 FLASH 智能調配</div>
+
+        <div id="result" class="result-container">
+            <p style="text-align:center; color:#999;">想吃點什麼健康又美味的？<br>點擊下方按鈕，私廚為您開箱！</p>
+        </div>
+        
+        <button class="go-btn" id="askBtn" onclick="openFridge()">🚀 冰箱開箱</button>
+        
+        <div class="status-info" id="status">系統就緒</div>
     </div>
 
     <script>
-        // 使用你的新金鑰
-        const API_KEY = "AIzaSyCIW9KpPtlgynNMummEIAReQThGstKEn5c";
+        // ⚠️ 請在此處貼上你剛申請成功的那組新金鑰
+        const API_KEY = "AIzaSyCIW9KpPtlgynNMummEIAReQThGstKEn5c"; 
 
-        async function callGemini25() {
+        async function openFridge() {
             const resArea = document.getElementById('result');
-            const debugArea = document.getElementById('debug');
+            const statusArea = document.getElementById('status');
             const btn = document.getElementById('askBtn');
             
-            resArea.innerHTML = "⏳ 正在請求 Gemini 2.5 Flash 生成建議...";
-            debugArea.style.display = "none";
+            resArea.innerHTML = "<p style='text-align:center; color:#ff6b6b;'>⏳ 私廚正在冰箱前思考...</p>";
+            statusArea.innerText = "連線中...";
             btn.disabled = true;
 
-            // 嚴格指定使用 Gemini 2.5 Flash
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
             try {
@@ -52,7 +76,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
-                            parts: [{ text: "推薦3個台灣超商減脂晚餐建議，請用繁體中文回覆。格式要漂亮。" }]
+                            parts: [{ text: "你是私人主廚。請推薦3組台灣超商減脂晚餐建議（如7-11/全家）。要求：高蛋白、無生菜、無牛奶。請用繁體中文回覆，每組都要有一個吸引人的品名和推薦理由。格式請簡潔。" }]
                         }]
                     })
                 });
@@ -60,19 +84,40 @@
                 const data = await response.json();
 
                 if (response.ok && data.candidates) {
-                    const text = data.candidates[0].content.parts[0].text;
-                    resArea.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                    const rawText = data.candidates[0].content.parts[0].text;
+                    resArea.innerHTML = formatFridgeResponse(rawText);
+                    statusArea.innerText = "本次推薦由 Gemini 2.5 提供";
                 } else {
-                    // 若失敗，拋出詳細錯誤供排查
-                    throw new Error(data.error ? data.error.message : JSON.stringify(data));
+                    throw new Error(data.error?.message || "服務異常");
                 }
             } catch (error) {
-                resArea.innerHTML = "❌ 存取 Gemini 2.5 Flash 失敗。";
-                debugArea.innerHTML = "<b>排錯細節：</b>\n" + error.message;
-                debugArea.style.display = "block";
+                resArea.innerHTML = `<p style="color:#cc0000; font-size:0.8rem;">❌ 冰箱門卡住了：${error.message}</p>`;
+                statusArea.innerText = "連線失敗";
             } finally {
                 btn.disabled = false;
             }
+        }
+
+        // 專門為「私廚小冰箱」設計的格式化工具
+        function formatFridgeResponse(text) {
+            // 簡單處理：將每個段落包裝成 dish-card
+            const segments = text.split(/\d\./).filter(s => s.trim().length > 5);
+            
+            if (segments.length < 2) {
+                return `<div class="dish-card">${text.replace(/\n/g, '<br>')}</div>`;
+            }
+
+            return segments.map(seg => {
+                const lines = seg.trim().split('\n');
+                const title = lines[0].replace(/\*/g, '');
+                const desc = lines.slice(1).join('<br>').replace(/\*/g, '');
+                return `
+                    <div class="dish-card">
+                        <span class="dish-name">✨ ${title}</span>
+                        <div class="dish-desc">${desc}</div>
+                    </div>
+                `;
+            }).join('');
         }
     </script>
 </body>
