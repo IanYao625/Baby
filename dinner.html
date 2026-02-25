@@ -3,158 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍽️ 寶貝的晚餐</title>
+    <title>🍽️ 寶貝的晚餐 - AI 修復版</title>
     <style>
-        :root { --primary: #f43f5e; --bg-overlay: rgba(255, 255, 255, 0.85); }
-        body { 
-            font-family: -apple-system, "PingFang TC", sans-serif; 
-            background: #fdf2f2; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; 
-        }
-        /* 頁面頂部導覽列：修正切換問題 */
-        .nav-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 25px; width: 100%; max-width: 450px; }
-        .nav-btn { flex: 1; padding: 12px; border-radius: 25px; font-weight: bold; cursor: pointer; border: none; font-size: 0.95rem; text-align: center; text-decoration: none; }
-        .nav-active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(244,63,94,0.3); }
-        .nav-inactive { background: white; color: #888; border: 1px solid #eee; }
-
-        .card { background: var(--bg-overlay); backdrop-filter: blur(12px); border-radius: 35px; padding: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        .mode-switch { display: flex; gap: 8px; margin-bottom: 20px; background: #ffe4e6; padding: 5px; border-radius: 15px; }
-        .mode-btn { flex: 1; padding: 10px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; color: #fb7185; background: transparent; }
-        .mode-btn.active { background: white; color: var(--primary); }
-        
-        .key-tag { font-size: 0.7rem; padding: 5px 12px; border-radius: 10px; background: #eee; cursor: pointer; margin-bottom: 15px; display: inline-block; }
-        .key-tag.active { background: #343a40; color: white; }
-
-        .option-card { background: white; border-radius: 20px; padding: 15px; margin-bottom: 15px; text-align: left; border-left: 6px solid #fb7185; box-shadow: 0 5px 10px rgba(0,0,0,0.05); }
-        .btn { border: none; padding: 16px; width: 100%; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 10px; }
-        .go-btn { background: #000; color: white; }
+        :root { --primary: #f43f5e; --bg: #fff5f5; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .nav-container { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav-btn { padding: 10px 20px; border-radius: 20px; border: 1px solid #eee; background: white; color: #888; text-decoration: none; font-weight: bold; font-size: 0.9rem; }
+        .nav-active { background: #ff6b6b; color: white; border: none; }
+        .card { background: white; border-radius: 30px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; }
+        .go-btn { background: #000; color: white; width: 100%; padding: 16px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 15px; transition: 0.2s; }
+        .go-btn:disabled { background: #ccc; }
+        .result-area { text-align: left; margin-top: 20px; line-height: 1.6; color: #444; min-height: 50px; }
+        .error-box { color: #e11d48; font-size: 0.8rem; background: #fff1f2; padding: 10px; border-radius: 10px; margin-top: 10px; border: 1px dashed #f43f5e; }
     </style>
 </head>
 <body>
 
     <div class="nav-container">
-        <a href="index.html" class="nav-btn nav-inactive">📋 瘦身計劃</a>
+        <a href="index.html" class="nav-btn">📋 瘦身計劃</a>
         <a href="dinner.html" class="nav-btn nav-active">🍽️ 寶貝晚餐</a>
     </div>
 
     <div class="card">
-        <div class="mode-switch">
-            <button id="m1" class="mode-btn active" onclick="switchMode('store')">🏪 晚餐模式</button>
-            <button id="m2" class="mode-btn" onclick="switchMode('chef')">👨‍🍳 冰箱模式</button>
-        </div>
-
-        <div style="margin-bottom: 10px;">
-            <span id="kt0" class="key-tag active" onclick="selectKey(0)">🔑 金鑰 1 (RR-I)</span>
-            <span id="kt1" class="key-tag" onclick="selectKey(1)">🔑 金鑰 2 (tl2w)</span>
-        </div>
-
-        <h2 id="title">✨ 晚餐想吃什麼？</h2>
-        
-        <div id="chef-tools" style="display:none; margin-bottom: 15px;">
-            <div style="display:flex; gap:5px; margin-bottom:10px;">
-                <input type="text" id="newTag" style="flex:1; padding:10px; border-radius:10px; border:1px solid #ddd;" placeholder="新增食材...">
-                <button onclick="addTag()" style="padding:10px; border-radius:10px; background:#000; color:#fff; border:none;">加</button>
-            </div>
-            <div id="tagList" style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center;"></div>
-        </div>
-
-        <div id="result-area"></div>
-        <button class="btn go-btn" id="goBtn" onclick="askAI()">🚀 幫我準備清單</button>
-        <button class="btn" id="resetBtn" style="display:none; background:white; border:1px solid #000;" onclick="resetUI()">⬅️ 重新挑選</button>
+        <h2 style="margin: 0 0 15px 0;">✨ 晚餐吃什麼？</h2>
+        <div id="result" class="result-area">點擊按鈕，讓 AI 為你挑選...</div>
+        <button class="go-btn" id="askBtn" onclick="askAI()">🚀 幫我準備清單</button>
+        <div id="debug-info"></div>
     </div>
 
-<script>
-    let currentMode = 'store';
-    let currentKeyIdx = 0;
-    let myFridge = ['雞蛋', '雞胸肉', '鯛魚', '豆腐'];
-    let selectedTags = [];
+    <script>
+        // 🔑 你的備用金鑰池
+        const KEYS = [
+            "AIzaSyBpW9OBq7lr_CPauCfsZi2TACR2nRr-I_4",
+            "AIzaSyB4ZlvsRRVP6pSFNmDfqvSjtUhKG3atl2w"
+        ];
 
-    const KEYS = [
-        "AIzaSyBpW9OBq7lr_CPauCfsZi2TACR2nRr-I_4",
-        "AIzaSyB4ZlvsRRVP6pSFNmDfqvSjtUhKG3atl2w"
-    ];
+        async function askAI() {
+            const resArea = document.getElementById('result');
+            const debugArea = document.getElementById('debug-info');
+            const btn = document.getElementById('askBtn');
+            
+            resArea.innerHTML = "⏳ AI 正在思考中，請稍候...";
+            debugArea.innerHTML = "";
+            btn.disabled = true;
 
-    // 嚴格型號清單
-    const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3-flash"];
+            const prompt = "你是專業營養師。請推薦3組台灣便利商店（如7-11/全家）的減脂晚餐。要求：高蛋白質、無生菜、無牛奶。請用繁體中文，格式清晰。";
+            
+            let success = false;
+            let errorLog = [];
 
-    function selectKey(idx) {
-        currentKeyIdx = idx;
-        document.getElementById('kt0').className = idx === 0 ? 'key-tag active' : 'key-tag';
-        document.getElementById('kt1').className = idx === 1 ? 'key-tag active' : 'key-tag';
-    }
+            // 🔄 輪詢金鑰與調用版本
+            for (let key of KEYS) {
+                const apiVersions = ['v1beta', 'v1']; // 同時嘗試兩種路徑
+                for (let ver of apiVersions) {
+                    try {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/${ver}/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            referrerPolicy: "no-referrer", // 🔒 隱藏來源，防止 API 被鎖
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: prompt }] }]
+                            })
+                        });
 
-    function switchMode(m) {
-        currentMode = m;
-        document.getElementById('m1').className = m === 'store' ? 'mode-btn active' : 'mode-btn';
-        document.getElementById('m2').className = m === 'chef' ? 'mode-btn active' : 'mode-btn';
-        document.getElementById('chef-tools').style.display = m === 'chef' ? 'block' : 'none';
-        document.getElementById('title').innerText = m === 'store' ? '✨ 晚餐吃什麼？' : '👨‍🍳 私廚小冰箱';
-        resetUI();
-        if(m === 'chef') renderTags();
-    }
+                        const data = await response.json();
 
-    function renderTags() {
-        const list = document.getElementById('tagList'); list.innerHTML = "";
-        myFridge.forEach(t => {
-            const span = document.createElement('span');
-            span.style.cssText = `padding:6px 12px; border-radius:10px; cursor:pointer; font-size:0.85rem; border:1px solid #ddd; background:${selectedTags.includes(t)?'#f43f5e':'white'}; color:${selectedTags.includes(t)?'white':'black'};`;
-            span.innerText = t;
-            span.onclick = () => {
-                if(selectedTags.includes(t)) selectedTags = selectedTags.filter(x => x!==t);
-                else selectedTags.push(t);
-                renderTags();
-            };
-            list.appendChild(span);
-        });
-    }
-
-    function addTag() { const v = document.getElementById('newTag').value; if(v){myFridge.push(v); renderTags(); document.getElementById('newTag').value="";} }
-
-    function resetUI() {
-        document.getElementById('result-area').innerHTML = "";
-        document.getElementById('goBtn').style.display = "block";
-        document.getElementById('resetBtn').style.display = "none";
-    }
-
-    async function askAI() {
-        const resArea = document.getElementById('result-area');
-        const goBtn = document.getElementById('goBtn');
-        resArea.innerHTML = "<p style='color:#fb7185; animation:pulse 1s infinite;'>🧪 正在呼叫高級頻道...</p>";
-        goBtn.disabled = true;
-
-        let prompt = currentMode === 'store' ? 
-            "推薦3組超商減脂晚餐，高蛋白、無生菜、無牛奶。格式：<div class='option-card'><b>[推薦] 品名</b><p>📍 清單：... </p></div>" :
-            `食材：${selectedTags.join(',')}。做2道減脂菜。格式：<div class='option-card'><b>🍴 品名</b><p>🍳 步驟：... </p></div>`;
-
-        let success = false;
-        let log = "";
-
-        for (let model of MODELS) {
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${KEYS[currentKeyIdx]}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    resArea.innerHTML = data.candidates[0].content.parts[0].text.replace(/```html|```/g, "");
-                    success = true;
-                    break;
-                } else {
-                    log += `${model}(${response.status}) `;
+                        if (response.ok && data.candidates) {
+                            resArea.innerHTML = formatResponse(data.candidates[0].content.parts[0].text);
+                            success = true;
+                            break;
+                        } else {
+                            errorLog.push(`${ver} 失敗: ${data.error ? data.error.message : '未知錯誤'}`);
+                        }
+                    } catch (e) {
+                        errorLog.push(`網路連線問題`);
+                    }
                 }
-            } catch (e) { log += `${model}(連線失敗) `; }
+                if (success) break;
+            }
+
+            if (!success) {
+                resArea.innerHTML = "❌ 暫時無法連線到 AI 伺服器";
+                debugArea.innerHTML = `<div class="error-box"><b>修復建議：</b><br>${errorLog[0]}<br><br>請檢查 Google AI Studio 是否限制了金鑰權限。</div>`;
+            }
+            btn.disabled = false;
         }
 
-        if (!success) {
-            resArea.innerHTML = `<div style="color:red; font-size:0.8rem; padding:15px; border:1px dashed red; border-radius:15px;">❌ 金鑰無權限或型號未啟用<br>錯誤日誌：${log}<br><br>💡 建議：點擊切換「金鑰 2」再試一次。</div>`;
-        } else {
-            goBtn.style.display = "none";
-            document.getElementById('resetBtn').style.display = "block";
+        // 簡單格式化 AI 回傳的文字
+        function formatResponse(text) {
+            return text
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                .replace(/\* /g, '• ');
         }
-        goBtn.disabled = false;
-    }
-</script>
+    </script>
 </body>
 </html>
