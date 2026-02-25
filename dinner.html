@@ -3,24 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍽️ 寶貝晚餐 - AI 自動匹配版</title>
+    <title>🍽️ 晚餐助手 - Gemini 2.5 Flash</title>
     <style>
         :root { --primary: #f43f5e; --bg: #fff5f5; }
-        body { font-family: -apple-system, "PingFang TC", sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        
-        /* 導航列 */
+        body { font-family: -apple-system, "PingFang TC", sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .nav-container { display: flex; gap: 10px; margin-bottom: 20px; width: 100%; max-width: 400px; }
-        .nav-btn { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #eee; background: white; color: #888; text-decoration: none; text-align: center; font-weight: bold; font-size: 0.9rem; }
+        .nav-btn { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #eee; background: white; color: #888; text-decoration: none; text-align: center; font-weight: bold; }
         .nav-active { background: #ff6b6b; color: white; border: none; }
-
-        /* 卡片設計 */
-        .card { background: white; border-radius: 30px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 400px; box-sizing: border-box; text-align: center; }
-        .result-area { text-align: left; margin-top: 20px; min-height: 100px; color: #444; line-height: 1.6; }
+        .card { background: white; border-radius: 30px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; box-sizing: border-box; }
         .go-btn { background: #000; color: white; width: 100%; padding: 16px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; font-size: 1.1rem; margin-top: 15px; }
-        .go-btn:disabled { background: #ccc; }
-        
-        /* 狀態標籤 */
-        .status-tag { font-size: 0.7rem; color: #bbb; margin-top: 15px; padding: 8px; border-top: 1px solid #f0f0f0; width: 100%; }
+        .result-area { text-align: left; margin-top: 20px; color: #444; line-height: 1.6; min-height: 50px; }
+        .debug-msg { font-size: 0.75rem; color: #cc0000; margin-top: 15px; text-align: left; white-space: pre-wrap; background: #fff0f0; padding: 15px; border-radius: 10px; display: none; border: 1px solid #ffccd5; }
     </style>
 </head>
 <body>
@@ -31,73 +24,52 @@
     </div>
 
     <div class="card">
-        <h2 style="margin: 0 0 10px 0;">✨ 晚餐吃什麼？</h2>
-        <div id="result" class="result-area">點擊按鈕，我會自動掃描您金鑰可用的 AI 模型並為您推薦...</div>
-        <button class="go-btn" id="askBtn" onclick="runAutoDinner()">🚀 幫我準備清單</button>
-        <div id="status" class="status-tag">準備就緒</div>
+        <h2 style="margin:0 0 10px 0;">✨ 晚餐吃什麼？</h2>
+        <div id="result" class="result-area">正在準備與 Gemini 2.5 Flash 連線...</div>
+        <button class="go-btn" id="askBtn" onclick="callGemini25()">🚀 詢問 Gemini 2.5</button>
+        <div id="debug" class="debug-msg"></div>
     </div>
 
     <script>
-        const KEY = "AIzaSyAx3DcRbxgR_ugSGjDsTmJLYf59LG-HYYA";
+        // 使用你的新金鑰
+        const API_KEY = "AIzaSyAx3DcRbxgR_ugSGjDsTmJLYf59LG-HYYA";
 
-        async function runAutoDinner() {
+        async function callGemini25() {
             const resArea = document.getElementById('result');
-            const statusArea = document.getElementById('status');
+            const debugArea = document.getElementById('debug');
             const btn = document.getElementById('askBtn');
             
+            resArea.innerHTML = "⏳ 正在請求 Gemini 2.5 Flash 生成建議...";
+            debugArea.style.display = "none";
             btn.disabled = true;
-            resArea.innerHTML = "⏳ 正在偵測您的金鑰權限...";
-            statusArea.innerText = "正在聯絡 Google 伺服器...";
+
+            // 嚴格指定使用 Gemini 2.5 Flash
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
             try {
-                // 1. 自動偵測金鑰可用的所有模型
-                const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${KEY}`);
-                const listData = await listResp.json();
-
-                if (!listData.models || listData.models.length === 0) {
-                    throw new Error("此金鑰目前沒有可用的模型權限。");
-                }
-
-                // 2. 從清單中篩選出真正能說話的模型 (優先選 Flash, 次選 Pro)
-                const availableModels = listData.models
-                    .filter(m => m.supportedGenerationMethods.includes('generateContent'))
-                    .map(m => m.name);
-
-                if (availableModels.length === 0) {
-                    throw new Error("找不到支援生成內容的模型。");
-                }
-
-                // 優先選擇最好的引擎
-                const modelToUse = availableModels.find(m => m.includes('1.5-flash')) || 
-                                   availableModels.find(m => m.includes('2.0-flash')) || 
-                                   availableModels.find(m => m.includes('pro')) || 
-                                   availableModels[0];
-
-                statusArea.innerText = `連線成功！正在使用引擎：${modelToUse.split('/')[1]}`;
-                resArea.innerHTML = "✅ 已匹配模型！正在生成減脂晚餐建議...";
-
-                // 3. 使用自動匹配到的模型發送請求
-                const genResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/${modelToUse}:generateContent?key=${KEY}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: "推薦3個台灣便利商店的減脂晚餐建議，請用繁體中文。格式清晰。" }] }]
+                        contents: [{
+                            parts: [{ text: "推薦3個台灣超商減脂晚餐建議，請用繁體中文回覆。格式要漂亮。" }]
+                        }]
                     })
                 });
 
-                const genData = await genResp.json();
-                
-                if (genData.candidates && genData.candidates[0].content) {
-                    const reply = genData.candidates[0].content.parts[0].text;
-                    resArea.innerHTML = reply.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-                } else {
-                    throw new Error("模型回傳數據異常。");
-                }
+                const data = await response.json();
 
+                if (response.ok && data.candidates) {
+                    const text = data.candidates[0].content.parts[0].text;
+                    resArea.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                } else {
+                    // 若失敗，拋出詳細錯誤供排查
+                    throw new Error(data.error ? data.error.message : JSON.stringify(data));
+                }
             } catch (error) {
-                console.error(error);
-                resArea.innerHTML = "❌ 無法生成內容。";
-                statusArea.innerText = `錯誤回報：${error.message}`;
+                resArea.innerHTML = "❌ 存取 Gemini 2.5 Flash 失敗。";
+                debugArea.innerHTML = "<b>排錯細節：</b>\n" + error.message;
+                debugArea.style.display = "block";
             } finally {
                 btn.disabled = false;
             }
