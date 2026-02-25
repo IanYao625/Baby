@@ -5,101 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🍽️ 寶貝的晚餐</title>
     <style>
-        :root { --primary: #f43f5e; --bg-overlay: rgba(255, 255, 255, 0.75); }
+        :root { --primary: #f43f5e; --bg-overlay: rgba(255, 255, 255, 0.85); }
         body { 
-            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; 
-            background: #fdf2f2 no-repeat center center fixed;
-            background-size: cover;
-            display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; min-height: 100vh;
+            font-family: -apple-system, "PingFang TC", sans-serif; 
+            background: #fdf2f2; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; 
         }
-        body::before {
-            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.05); z-index: -1;
-        }
-        .card { background: var(--bg-overlay); backdrop-filter: blur(12px); border-radius: 40px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); width: 100%; max-width: 450px; text-align: center; border: 1px solid rgba(255,255,255,0.4); margin-top: 20px; }
-        .nav { display: flex; gap: 8px; margin-bottom: 20px; background: rgba(255,228,230,0.6); padding: 5px; border-radius: 20px; }
-        .nav-btn { flex: 1; padding: 12px; border-radius: 15px; border: none; cursor: pointer; font-weight: bold; color: #fb7185; background: transparent; }
-        .nav-btn.active { background: white; color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        /* 頁面頂部導覽列：修正切換問題 */
+        .nav-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 25px; width: 100%; max-width: 450px; }
+        .nav-btn { flex: 1; padding: 12px; border-radius: 25px; font-weight: bold; cursor: pointer; border: none; font-size: 0.95rem; text-align: center; text-decoration: none; }
+        .nav-active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(244,63,94,0.3); }
+        .nav-inactive { background: white; color: #888; border: 1px solid #eee; }
+
+        .card { background: var(--bg-overlay); backdrop-filter: blur(12px); border-radius: 35px; padding: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        .mode-switch { display: flex; gap: 8px; margin-bottom: 20px; background: #ffe4e6; padding: 5px; border-radius: 15px; }
+        .mode-btn { flex: 1; padding: 10px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; color: #fb7185; background: transparent; }
+        .mode-btn.active { background: white; color: var(--primary); }
         
-        .key-selector { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; font-size: 0.8rem; }
-        .key-tag { padding: 4px 12px; border-radius: 10px; background: rgba(0,0,0,0.05); cursor: pointer; border: 1px solid transparent; }
-        .key-tag.active { border-color: var(--primary); color: var(--primary); background: #fff1f2; font-weight: bold; }
+        .key-tag { font-size: 0.7rem; padding: 5px 12px; border-radius: 10px; background: #eee; cursor: pointer; margin-bottom: 15px; display: inline-block; }
+        .key-tag.active { background: #343a40; color: white; }
 
-        .tag-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; justify-content: center; }
-        .tag-btn { background: white; border: 2px solid #e2e8f0; padding: 8px 15px; border-radius: 12px; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
-        .tag-btn.selected { background: #fff1f2; border-color: var(--primary); color: var(--primary); }
-        .option-card { background: white; border-radius: 25px; padding: 20px; margin-bottom: 15px; text-align: left; position: relative; border-left: 6px solid #fb7185; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .option-card b { color: #000; font-size: 1.15rem; display: block; margin-bottom: 8px; }
-        .btn { border: none; padding: 18px; width: 100%; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 1.1rem; margin-top: 10px; }
+        .option-card { background: white; border-radius: 20px; padding: 15px; margin-bottom: 15px; text-align: left; border-left: 6px solid #fb7185; box-shadow: 0 5px 10px rgba(0,0,0,0.05); }
+        .btn { border: none; padding: 16px; width: 100%; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 10px; }
         .go-btn { background: #000; color: white; }
-        .admin-panel { width: 100%; max-width: 450px; margin-top: 30px; background: rgba(0,0,0,0.7); color: white; border-radius: 20px; overflow: hidden; }
-        .admin-header { padding: 12px; cursor: pointer; font-size: 0.8rem; text-align: center; }
-        .admin-content { padding: 0 20px; max-height: 0; transition: 0.3s; overflow: hidden; }
-        .admin-content.open { padding: 15px 20px; max-height: 150px; }
-        .admin-input { width: 100%; padding: 10px; border-radius: 10px; border: none; margin-top: 8px; box-sizing: border-box; }
-        .footer-ver { font-size: 0.7rem; color: rgba(255,255,255,0.8); margin-top: 15px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-        .ai-greeting { font-size: 1rem; margin-bottom: 12px; color: #444; text-align: left; line-height: 1.4; }
-
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
+    <div class="nav-container">
+        <a href="index.html" class="nav-btn nav-inactive">📋 瘦身計劃</a>
+        <a href="dinner.html" class="nav-btn nav-active">🍽️ 寶貝晚餐</a>
+    </div>
+
     <div class="card">
-        <div class="nav">
-            <button id="tab1" class="nav-btn active" onclick="switchMode('store')">🏪 寶貝的晚餐</button>
-            <button id="tab2" class="nav-btn" onclick="switchMode('chef')">👨‍🍳 私廚小冰箱</button>
+        <div class="mode-switch">
+            <button id="m1" class="mode-btn active" onclick="switchMode('store')">🏪 晚餐模式</button>
+            <button id="m2" class="mode-btn" onclick="switchMode('chef')">👨‍🍳 冰箱模式</button>
         </div>
 
-        <div class="key-selector">
-            <span id="kt0" class="key-tag active" onclick="selectKey(0)">🔑 金鑰 1</span>
-            <span id="kt1" class="key-tag" onclick="selectKey(1)">🔑 金鑰 2</span>
+        <div style="margin-bottom: 10px;">
+            <span id="kt0" class="key-tag active" onclick="selectKey(0)">🔑 金鑰 1 (RR-I)</span>
+            <span id="kt1" class="key-tag" onclick="selectKey(1)">🔑 金鑰 2 (tl2w)</span>
         </div>
 
         <h2 id="title">✨ 晚餐想吃什麼？</h2>
-        <p id="subtitle" style="font-size: 0.85rem; color: #fb7185; font-weight: bold; margin-bottom: 20px;">( 🚫 無生菜 / 🚫 無牛奶 / 🎯 減脂優選 )</p>
         
-        <div id="chef-tools" style="display:none;">
-            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                <input type="text" id="newTag" style="flex:1; padding:12px; border-radius:15px; border:1px solid #ddd;" placeholder="新增冰箱食材...">
-                <button onclick="addNewTag()" style="padding:0 20px; border-radius:15px; background:#000; color:white; border:none; cursor:pointer;">新增</button>
+        <div id="chef-tools" style="display:none; margin-bottom: 15px;">
+            <div style="display:flex; gap:5px; margin-bottom:10px;">
+                <input type="text" id="newTag" style="flex:1; padding:10px; border-radius:10px; border:1px solid #ddd;" placeholder="新增食材...">
+                <button onclick="addTag()" style="padding:10px; border-radius:10px; background:#000; color:#fff; border:none;">加</button>
             </div>
-            <div class="tag-container" id="tagList"></div>
+            <div id="tagList" style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center;"></div>
         </div>
+
         <div id="result-area"></div>
         <button class="btn go-btn" id="goBtn" onclick="askAI()">🚀 幫我準備清單</button>
-        <button class="btn" id="drawBtn" style="display:none; background:#f59e0b; color:white;" onclick="startDraw()">🎯 命運轉盤：抽一個！</button>
-        <button class="btn" id="resetBtn" style="display:none; background:white; color:#000; border:1px solid #000;" onclick="resetUI()">⬅️ 重新挑選</button>
+        <button class="btn" id="resetBtn" style="display:none; background:white; border:1px solid #000;" onclick="resetUI()">⬅️ 重新挑選</button>
     </div>
-
-    <div class="admin-panel">
-        <div class="admin-header" onclick="toggleAdmin()">⚙️ 設定中心</div>
-        <div id="adminContent" class="admin-content">
-            <input type="text" id="bgUrl" class="admin-input" placeholder="貼上背景連結..." onchange="saveAndApplyBg(this.value)">
-        </div>
-    </div>
-    <div class="footer-ver">寶貝的晚餐 v11.2.2 | 嚴格 2.5/3.0 版</div>
 
 <script>
-    let mode = 'store';
-    let currentKeyIdx = 0; 
-    let savedFridge = localStorage.getItem('my_fridge_data');
-    let myFridge = savedFridge ? JSON.parse(savedFridge) : ['雞蛋', '雞胸肉', '鯛魚', '豆腐', '起司'];
+    let currentMode = 'store';
+    let currentKeyIdx = 0;
+    let myFridge = ['雞蛋', '雞胸肉', '鯛魚', '豆腐'];
     let selectedTags = [];
-    let storeResultHTML = "";
-    let chefResultHTML = "";
 
     const KEYS = [
         "AIzaSyBpW9OBq7lr_CPauCfsZi2TACR2nRr-I_4",
         "AIzaSyB4ZlvsRRVP6pSFNmDfqvSjtUhKG3atl2w"
     ];
 
-    // 🔴 嚴格鎖定：絕對不出現任何 1.5 版本
-    const MODELS = [
-        "gemini-2.5-flash",
-        "gemini-2.5-flash-lite",
-        "gemini-3-flash"
-    ];
+    // 嚴格型號清單
+    const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3-flash"];
 
     function selectKey(idx) {
         currentKeyIdx = idx;
@@ -107,78 +82,51 @@
         document.getElementById('kt1').className = idx === 1 ? 'key-tag active' : 'key-tag';
     }
 
-    window.onload = function() {
-        const savedBg = localStorage.getItem('dinner_bg_url');
-        if (savedBg) applyBgLogic(savedBg);
-        if(mode === 'chef') initFridge();
-    };
-
-    function toggleAdmin() { document.getElementById('adminContent').classList.toggle('open'); }
-    function applyBgLogic(url) {
-        if (!url) return;
-        let finalUrl = url;
-        if (url.includes("drive.google.com")) {
-            const idMatch = url.match(/\/d\/(.+?)\//) || url.match(/id=(.+?)(&|$)/);
-            if (idMatch && idMatch[1]) { finalUrl = `https://drive.google.com/uc?id=${idMatch[1]}`; }
-        }
-        document.body.style.backgroundImage = "url('" + finalUrl + "')";
+    function switchMode(m) {
+        currentMode = m;
+        document.getElementById('m1').className = m === 'store' ? 'mode-btn active' : 'mode-btn';
+        document.getElementById('m2').className = m === 'chef' ? 'mode-btn active' : 'mode-btn';
+        document.getElementById('chef-tools').style.display = m === 'chef' ? 'block' : 'none';
+        document.getElementById('title').innerText = m === 'store' ? '✨ 晚餐吃什麼？' : '👨‍🍳 私廚小冰箱';
+        resetUI();
+        if(m === 'chef') renderTags();
     }
-    function saveAndApplyBg(url) { if(!url) return; localStorage.setItem('dinner_bg_url', url); applyBgLogic(url); }
 
-    function initFridge() {
+    function renderTags() {
         const list = document.getElementById('tagList'); list.innerHTML = "";
-        myFridge.forEach(item => {
-            const btn = document.createElement('button');
-            btn.className = `tag-btn ${selectedTags.includes(item) ? 'selected' : ''}`;
-            btn.innerHTML = `<span>${item}</span><span style="color:#ccc; margin-left:8px;" onclick="removeTag(event, '${item}')">✕</span>`;
-            btn.onclick = () => {
-                if(selectedTags.includes(item)) selectedTags = selectedTags.filter(t => t !== item);
-                else selectedTags.push(item);
-                initFridge();
+        myFridge.forEach(t => {
+            const span = document.createElement('span');
+            span.style.cssText = `padding:6px 12px; border-radius:10px; cursor:pointer; font-size:0.85rem; border:1px solid #ddd; background:${selectedTags.includes(t)?'#f43f5e':'white'}; color:${selectedTags.includes(t)?'white':'black'};`;
+            span.innerText = t;
+            span.onclick = () => {
+                if(selectedTags.includes(t)) selectedTags = selectedTags.filter(x => x!==t);
+                else selectedTags.push(t);
+                renderTags();
             };
-            list.appendChild(btn);
+            list.appendChild(span);
         });
     }
 
-    function removeTag(e, name) { e.stopPropagation(); myFridge = myFridge.filter(t => t !== name); selectedTags = selectedTags.filter(t => t !== name); localStorage.setItem('my_fridge_data', JSON.stringify(myFridge)); initFridge(); }
-    function addNewTag() { const val = document.getElementById('newTag').value.trim(); if(val && !myFridge.includes(val)) { myFridge.push(val); localStorage.setItem('my_fridge_data', JSON.stringify(myFridge)); initFridge(); document.getElementById('newTag').value = ""; } }
-
-    function switchMode(m) {
-        mode = m;
-        document.getElementById('tab1').className = m==='store'?'nav-btn active':'nav-btn';
-        document.getElementById('tab2').className = m==='chef'?'nav-btn active':'nav-btn';
-        document.getElementById('chef-tools').style.display = m==='chef'?'block':'none';
-        document.getElementById('title').innerText = m==='store'?'✨ 晚餐吃什麼？':'👨‍🍳 私廚小冰箱';
-        const targetHTML = (m === 'store') ? storeResultHTML : chefResultHTML;
-        document.getElementById('result-area').innerHTML = targetHTML;
-        if (targetHTML !== "") {
-            document.getElementById('goBtn').style.display = "none";
-            document.getElementById('resetBtn').style.display = "block";
-            document.getElementById('drawBtn').style.display = (m === 'store') ? "block" : "none";
-        } else { resetUI(); }
-        if(m==='chef') initFridge();
-    }
+    function addTag() { const v = document.getElementById('newTag').value; if(v){myFridge.push(v); renderTags(); document.getElementById('newTag').value="";} }
 
     function resetUI() {
-        if (mode === 'store') storeResultHTML = ""; else chefResultHTML = "";
         document.getElementById('result-area').innerHTML = "";
-        document.getElementById('drawBtn').style.display = "none";
-        document.getElementById('resetBtn').style.display = "none";
         document.getElementById('goBtn').style.display = "block";
+        document.getElementById('resetBtn').style.display = "none";
     }
 
     async function askAI() {
         const resArea = document.getElementById('result-area');
         const goBtn = document.getElementById('goBtn');
-        resArea.innerHTML = `<p style="text-align:center; padding:30px; color:#fb7185; font-weight:bold; animation: pulse 1.5s infinite;">🥣 正在使用 2.5/3.0 頻道規劃中...</p>`;
+        resArea.innerHTML = "<p style='color:#fb7185; animation:pulse 1s infinite;'>🧪 正在呼叫高級頻道...</p>";
         goBtn.disabled = true;
 
-        let prompt = mode === 'store' ? 
-            "推薦3組超商減脂晚餐，高蛋白、無生菜、無牛奶。格式：<div class='ai-greeting'>你好！</div><div class='option-card'><b>[推薦] 品名 (約 XXX kcal)</b><p>📍 清單：... </p></div>" :
-            `食材：${selectedTags.join(',')}。規劃2道減脂食譜。格式：<div class='ai-greeting'>你好！</div><div class='option-card'><b>🍴 [私廚推薦] 品名</b><p>🍳 步驟：... </p></div>`;
+        let prompt = currentMode === 'store' ? 
+            "推薦3組超商減脂晚餐，高蛋白、無生菜、無牛奶。格式：<div class='option-card'><b>[推薦] 品名</b><p>📍 清單：... </p></div>" :
+            `食材：${selectedTags.join(',')}。做2道減脂菜。格式：<div class='option-card'><b>🍴 品名</b><p>🍳 步驟：... </p></div>`;
 
         let success = false;
-        let logs = "";
+        let log = "";
 
         for (let model of MODELS) {
             try {
@@ -190,46 +138,22 @@
                 
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.candidates && data.candidates[0].content) {
-                        let aiText = data.candidates[0].content.parts[0].text.replace(/```html|```/g, "").replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                        if (mode === 'store') storeResultHTML = aiText; else chefResultHTML = aiText;
-                        resArea.innerHTML = aiText;
-                        success = true;
-                        break; 
-                    }
+                    resArea.innerHTML = data.candidates[0].content.parts[0].text.replace(/```html|```/g, "");
+                    success = true;
+                    break;
                 } else {
-                    logs += `[${model}: ${response.status}] `;
+                    log += `${model}(${response.status}) `;
                 }
-            } catch (e) {
-                logs += `[${model}: 連線失敗] `;
-            }
+            } catch (e) { log += `${model}(連線失敗) `; }
         }
 
         if (!success) {
-            resArea.innerHTML = `<p style="color:red; text-align:center; padding:20px;">❌ 目前所有 2.5/3.0 頻道無回應<br><small>${logs}</small><br><br>💡 提示：請檢查金鑰是否有在 Google AI Studio 啟用，或嘗試切換金鑰。</p>`;
+            resArea.innerHTML = `<div style="color:red; font-size:0.8rem; padding:15px; border:1px dashed red; border-radius:15px;">❌ 金鑰無權限或型號未啟用<br>錯誤日誌：${log}<br><br>💡 建議：點擊切換「金鑰 2」再試一次。</div>`;
         } else {
-            if(mode === 'store') document.getElementById('drawBtn').style.display = "block";
             goBtn.style.display = "none";
             document.getElementById('resetBtn').style.display = "block";
         }
         goBtn.disabled = false;
-    }
-
-    function startDraw() {
-        const cards = document.querySelectorAll('.option-card');
-        if (cards.length < 1) return;
-        let count = 0;
-        const timer = setInterval(() => {
-            cards.forEach(c => { c.style.borderColor = "#ddd"; c.style.background = "white"; });
-            cards[count % cards.length].style.borderColor = "#fb7185";
-            if (++count > 12) {
-                clearInterval(timer);
-                cards.forEach(c => { c.style.borderColor = "#ddd"; c.style.background = "white"; });
-                let winner = cards[Math.floor(Math.random() * cards.length)];
-                winner.style.borderColor = "#f59e0b"; winner.style.background = "#fffbeb";
-                winner.scrollIntoView({behavior: "smooth"});
-            }
-        }, 120);
     }
 </script>
 </body>
