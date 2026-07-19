@@ -3,23 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#5b5ce2">
-  <title>體重趨勢日誌</title>
+  <meta name="theme-color" content="#e77b91">
+  <title>暖心體重日記</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <style>
     :root {
-      --brand: #5b5ce2;
-      --brand-dark: #4445bc;
-      --brand-soft: #eeeeff;
-      --ink: #1f2240;
-      --muted: #6c708d;
-      --line: #e7e8f0;
-      --surface: #ffffff;
-      --background: #f7f7fc;
-      --danger: #d94665;
-      --success: #15966f;
-      --shadow: 0 14px 40px rgba(38, 40, 93, .08);
+      --brand: #e77b91;
+      --brand-dark: #c95d75;
+      --brand-soft: #fff0f3;
+      --ink: #4d3540;
+      --muted: #95747f;
+      --line: #f2dde2;
+      --surface: rgba(255, 255, 255, .88);
+      --background: #fff9f6;
+      --danger: #d14d68;
+      --success: #4b9a76;
+      --shadow: 0 16px 42px rgba(173, 95, 111, .13);
     }
 
     * { box-sizing: border-box; }
@@ -28,7 +28,10 @@
       margin: 0;
       min-width: 320px;
       color: var(--ink);
-      background: var(--background);
+      background:
+        radial-gradient(circle at 6% 4%, rgba(255, 218, 192, .65), transparent 26rem),
+        radial-gradient(circle at 95% 18%, rgba(252, 211, 222, .68), transparent 24rem),
+        var(--background);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Noto Sans TC", sans-serif;
       line-height: 1.5;
     }
@@ -47,47 +50,53 @@
       margin-bottom: 28px;
     }
 
-    .eyebrow { margin: 0 0 8px; color: var(--brand); font-size: .82rem; font-weight: 800; letter-spacing: .1em; }
-    h1 { margin: 0; font-size: clamp(1.85rem, 5vw, 2.75rem); line-height: 1.16; letter-spacing: -.045em; }
+    .eyebrow { display: inline-block; margin: 0 0 9px; padding: 5px 10px; border-radius: 999px; color: var(--brand-dark); background: rgba(255, 240, 243, .86); font-size: .8rem; font-weight: 800; letter-spacing: .04em; }
+    h1 { margin: 0; color: #673e4e; font-size: clamp(1.85rem, 5vw, 2.75rem); line-height: 1.16; letter-spacing: -.045em; }
     .subtitle { max-width: 610px; margin: 12px 0 0; color: var(--muted); }
 
     .privacy-note {
       flex: 0 0 auto;
       margin: 0;
       padding: 9px 13px;
-      border: 1px solid #dfe0ff;
+      border: 1px solid #f3d8de;
       border-radius: 999px;
       color: var(--brand-dark);
       background: var(--brand-soft);
       font-size: .84rem;
       font-weight: 700;
     }
-    .privacy-note.is-offline { border-color: #f7d8a2; color: #9a6410; background: #fff7e7; }
+    .privacy-note.is-offline { border-color: #f6d29e; color: #9a6410; background: #fff7e7; }
 
     .dashboard { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .85fr); gap: 22px; align-items: start; }
     .main-column, .side-column { display: grid; gap: 22px; }
 
     .card {
       padding: 24px;
-      border: 1px solid rgba(228, 229, 239, .9);
+      border: 1px solid rgba(250, 225, 229, .9);
       border-radius: 22px;
       background: var(--surface);
+      backdrop-filter: blur(10px);
       box-shadow: var(--shadow);
     }
 
     .card-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
     h2 { margin: 0; font-size: 1.12rem; letter-spacing: -.02em; }
+    #record-title::before { content: "✍️ "; }
+    #overview-title::before { content: "🌷 "; }
+    #history-title::before { content: "🗓️ "; }
+    #chart-title::before { content: "📈 "; }
     .record-count { color: var(--muted); font-size: .85rem; }
 
     .record-form { display: grid; grid-template-columns: minmax(120px, .68fr) minmax(195px, 1.2fr) auto; gap: 12px; align-items: end; }
     .field { display: grid; gap: 7px; }
-    label { color: #525672; font-size: .84rem; font-weight: 750; }
+    .note-field { grid-column: 1 / -1; }
+    label { color: #735562; font-size: .84rem; font-weight: 750; }
 
     input {
       width: 100%;
       min-height: 46px;
       padding: 10px 12px;
-      border: 1px solid #dfe1ea;
+      border: 1px solid #f0d9df;
       border-radius: 11px;
       outline: none;
       color: var(--ink);
@@ -95,7 +104,7 @@
       transition: border-color .18s, box-shadow .18s;
     }
 
-    input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(91, 92, 226, .13); }
+    input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(231, 123, 145, .14); }
 
     .primary-button {
       min-height: 46px;
@@ -103,40 +112,60 @@
       border: 0;
       border-radius: 11px;
       color: white;
-      background: var(--brand);
+      background: linear-gradient(135deg, #e77b91, #ee9b79);
       font-weight: 800;
       white-space: nowrap;
       transition: transform .18s, background .18s;
     }
 
-    .primary-button:hover { background: var(--brand-dark); transform: translateY(-1px); }
+    .primary-button:hover { background: linear-gradient(135deg, #cf6279, #df8063); transform: translateY(-1px); }
+    .secondary-button { min-height: 40px; padding: 9px 13px; border: 1px solid #f1d5dc; border-radius: 10px; color: #8c5262; background: #fffafb; font-size: .84rem; font-weight: 800; transition: transform .18s, background .18s; }
+    .secondary-button:hover { background: #fff0f3; transform: translateY(-1px); }
     .form-message { min-height: 1.35em; margin: 11px 0 0; color: var(--danger); font-size: .86rem; font-weight: 650; }
     .form-message.is-success { color: var(--success); }
 
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; }
-    .stat { min-height: 100px; padding: 15px; border-radius: 15px; background: #f9f9fd; }
+    .stat { min-height: 100px; padding: 15px; border-radius: 15px; background: #fff8f8; }
+    .stat:nth-child(2) { background: #fff9ef; }
+    .stat:nth-child(3) { background: #f8fbf5; }
     .stat-label { display: block; color: var(--muted); font-size: .78rem; font-weight: 700; }
     .stat-value { display: block; margin-top: 7px; font-size: clamp(1.25rem, 3vw, 1.65rem); font-weight: 850; letter-spacing: -.055em; }
     .stat-value.positive { color: var(--danger); }
     .stat-value.negative { color: var(--success); }
     .stat-detail { display: block; margin-top: 4px; color: var(--muted); font-size: .73rem; }
 
-    .advisor-card { overflow: hidden; padding: 0; }
+    .goal-card { background: linear-gradient(135deg, rgba(255, 249, 239, .97), rgba(255, 241, 244, .92)); }
+    .goal-form { display: flex; gap: 10px; align-items: end; }
+    .goal-form .field { flex: 1; }
+    .goal-form input { max-width: 210px; }
+    .progress-track { height: 12px; margin: 18px 0 10px; overflow: hidden; border-radius: 999px; background: rgba(232, 185, 151, .24); }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #e77b91, #eea17d); transition: width .45s ease; }
+    .goal-summary { margin: 0; color: #805766; font-size: .88rem; }
+    .goal-summary strong { color: var(--brand-dark); }
+
+    .advisor-card { overflow: hidden; padding: 0; background: linear-gradient(145deg, rgba(255, 244, 247, .96), rgba(255, 252, 246, .93)); }
     .advisor-title { display: flex; align-items: center; gap: 11px; padding: 21px 24px 15px; }
     .advisor-icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; background: var(--brand-soft); }
     .trend-badge { margin-left: auto; padding: 5px 10px; border-radius: 999px; color: var(--brand-dark); background: var(--brand-soft); font-size: .78rem; font-weight: 800; }
     .advisor-content { padding: 0 24px 22px; }
-    .advice-lead { margin: 0; color: #444965; font-size: .93rem; }
+    .advice-lead { margin: 0; color: #664b56; font-size: .93rem; }
     .advice-list { display: grid; gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
-    .advice-list li { position: relative; padding: 11px 12px 11px 34px; border-radius: 11px; color: #454961; background: #fafaff; font-size: .88rem; }
+    .advice-list li { position: relative; padding: 11px 12px 11px 34px; border-radius: 11px; color: #664b56; background: rgba(255, 255, 255, .67); font-size: .88rem; }
     .advice-list li::before { content: "✓"; position: absolute; left: 12px; color: var(--brand); font-weight: 900; }
     .advisor-footnote { margin: 15px 0 0; color: var(--muted); font-size: .74rem; }
+
+    .report-card { background: linear-gradient(145deg, rgba(248, 252, 246, .96), rgba(255, 255, 255, .88)); }
+    .report-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .report-item { padding: 12px; border-radius: 12px; background: rgba(255, 255, 255, .75); }
+    .report-item span { display: block; color: var(--muted); font-size: .74rem; font-weight: 700; }
+    .report-item strong { display: block; margin-top: 3px; color: #52735e; font-size: 1.04rem; }
+    .report-note { margin: 14px 0 0; color: #6d7d70; font-size: .82rem; }
 
     .history-card { min-height: 300px; }
     .history-scroll { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { padding: 0 12px 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .76rem; font-weight: 750; }
-    td { padding: 13px 12px; border-bottom: 1px solid #f0f1f6; font-size: .9rem; }
+    td { padding: 13px 12px; border-bottom: 1px solid #f8eaed; font-size: .9rem; }
     tr:last-child td { border-bottom: 0; }
     .weight-cell { font-weight: 850; font-variant-numeric: tabular-nums; }
     .change-cell { font-variant-numeric: tabular-nums; font-size: .82rem; font-weight: 750; }
@@ -152,10 +181,18 @@
     .chart-card { padding-bottom: 18px; }
     .chart { display: flex; align-items: end; min-height: 160px; gap: 9px; padding: 15px 3px 0; border-bottom: 1px solid var(--line); }
     .bar-item { display: grid; flex: 1; min-width: 21px; align-items: end; gap: 6px; text-align: center; }
-    .bar { min-height: 5px; border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, #9596f7, var(--brand)); }
+    .bar { min-height: 5px; border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, #f4b09f, var(--brand)); box-shadow: 0 3px 8px rgba(224, 110, 132, .16); }
     .bar-label { overflow: hidden; color: var(--muted); font-size: .63rem; text-overflow: ellipsis; white-space: nowrap; }
     .chart-empty { width: 100%; align-self: center; color: var(--muted); text-align: center; font-size: .88rem; }
     .chart-caption { margin: 12px 0 0; color: var(--muted); font-size: .76rem; }
+
+    .tools-card { background: rgba(255, 255, 255, .83); }
+    .reminder-row { display: flex; align-items: center; gap: 9px; }
+    .reminder-row input[type="time"] { min-height: 40px; max-width: 124px; padding: 7px 9px; }
+    .reminder-toggle { display: inline-flex; align-items: center; gap: 7px; color: #76535f; font-size: .85rem; font-weight: 750; }
+    .reminder-toggle input { width: 17px; min-height: 17px; accent-color: var(--brand); }
+    .tool-message { min-height: 1.3em; margin: 11px 0 0; color: var(--muted); font-size: .77rem; }
+    .export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 17px; }
 
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
@@ -171,11 +208,14 @@
       .privacy-note { align-self: flex-start; }
       .card { padding: 19px; border-radius: 18px; }
       .record-form { grid-template-columns: 1fr; }
+      .goal-form { align-items: stretch; flex-direction: column; }
+      .goal-form input { max-width: none; }
       .primary-button { width: 100%; }
       .stats, .side-column { grid-template-columns: 1fr; }
       .advisor-title, .advisor-content { padding-right: 19px; padding-left: 19px; }
       th, td { padding-right: 8px; padding-left: 8px; }
-      th:nth-child(3), td:nth-child(3) { display: none; }
+      th:nth-child(3), td:nth-child(3), th:nth-child(4), td:nth-child(4) { display: none; }
+      .reminder-row { align-items: flex-start; flex-direction: column; }
     }
   </style>
 </head>
@@ -183,9 +223,9 @@
   <main class="page-shell">
     <header class="hero">
       <div>
-        <p class="eyebrow">PERSONAL WELLNESS LOG</p>
-        <h1>體重趨勢日誌</h1>
-        <p class="subtitle">以簡單、持續的紀錄看懂身體變化，取得更貼近目前狀態的飲食與運動方向。</p>
+        <p class="eyebrow">每天一點點，更靠近自己</p>
+        <h1>暖心體重日記</h1>
+        <p class="subtitle">用溫柔而持續的紀錄，看懂身體的變化；照顧自己，不必急著完美。</p>
       </div>
       <p id="syncStatus" class="privacy-note" role="status">☁️ 正在連線雲端…</p>
     </header>
@@ -206,6 +246,10 @@
               <input id="recordedAtInput" name="recordedAt" type="datetime-local" required>
             </div>
             <button class="primary-button" type="submit">儲存紀錄</button>
+            <div class="field note-field">
+              <label for="noteInput">小備註（選填）</label>
+              <input id="noteInput" name="note" type="text" maxlength="80" placeholder="例如：晨起空腹、昨晚聚餐、完成運動">
+            </div>
           </form>
           <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
         </section>
@@ -217,6 +261,16 @@
             <div class="stat"><span class="stat-label">近期變化</span><strong id="recentChange" class="stat-value">—</strong><span id="recentChangeDetail" class="stat-detail">新增紀錄後顯示</span></div>
             <div class="stat"><span class="stat-label">近 7 筆平均</span><strong id="averageWeight" class="stat-value">—</strong><span id="averageDetail" class="stat-detail">至少需要 1 筆資料</span></div>
           </div>
+        </section>
+
+        <section class="card goal-card" aria-labelledby="goal-title">
+          <div class="card-heading"><h2 id="goal-title">🎯 我的目標</h2></div>
+          <form id="goalForm" class="goal-form" novalidate>
+            <div class="field"><label for="goalWeightInput">目標體重（公斤）</label><input id="goalWeightInput" type="number" min="20" max="400" step="0.1" inputmode="decimal" placeholder="例如 55.0"></div>
+            <button class="secondary-button" type="submit">儲存目標</button>
+          </form>
+          <div class="progress-track" aria-label="目標進度"><div id="goalProgressFill" class="progress-fill"></div></div>
+          <p id="goalSummary" class="goal-summary">設定一個目標，讓每次紀錄都有方向。</p>
         </section>
 
         <section class="card history-card" aria-labelledby="history-title">
@@ -231,10 +285,31 @@
           <div id="advisorContent" class="advisor-content"></div>
         </section>
 
+        <section class="card report-card" aria-labelledby="report-title">
+          <div class="card-heading"><h2 id="report-title">📬 本週小報告</h2></div>
+          <div id="weeklyReport" class="report-grid"></div>
+          <p id="reportNote" class="report-note"></p>
+        </section>
+
         <section class="card chart-card" aria-labelledby="chart-title">
           <div class="card-heading"><h2 id="chart-title">最近 10 筆趨勢</h2></div>
           <div id="trendChart" class="chart" aria-label="最近十筆體重長條趨勢圖"></div>
           <p class="chart-caption">柱狀高度依最近紀錄中的相對體重呈現，適合快速查看變化方向。</p>
+        </section>
+
+        <section class="card tools-card" aria-labelledby="tools-title">
+          <div class="card-heading"><h2 id="tools-title">🔔 提醒與備份</h2></div>
+          <div class="reminder-row">
+            <label class="reminder-toggle" for="reminderEnabled"><input id="reminderEnabled" type="checkbox"> 每日提醒量測</label>
+            <label class="sr-only" for="reminderTime">提醒時間</label>
+            <input id="reminderTime" type="time" value="08:00">
+            <button id="saveReminderButton" class="secondary-button" type="button">儲存提醒</button>
+          </div>
+          <p id="toolMessage" class="tool-message">提醒設定只會儲存在這台裝置。</p>
+          <div class="export-actions">
+            <button id="exportCsvButton" class="secondary-button" type="button">下載 CSV</button>
+            <button id="exportJsonButton" class="secondary-button" type="button">下載完整備份</button>
+          </div>
         </section>
       </aside>
     </section>
@@ -246,6 +321,8 @@
     /** 資料層：處理瀏覽器快取，讓暫時離線時仍可讀取資料。 */
     class StorageManager {
       static STORAGE_KEY = "weight-tracker-records-v1";
+      static SETTINGS_KEY = "weight-tracker-settings-v1";
+      static REMINDER_KEY = "weight-tracker-reminder-v1";
 
       loadRecords() {
         try {
@@ -260,6 +337,30 @@
 
       saveRecords(records) {
         localStorage.setItem(StorageManager.STORAGE_KEY, JSON.stringify(records));
+      }
+
+      loadSettings() {
+        try {
+          return JSON.parse(localStorage.getItem(StorageManager.SETTINGS_KEY)) || {};
+        } catch (error) {
+          return {};
+        }
+      }
+
+      saveSettings(settings) {
+        localStorage.setItem(StorageManager.SETTINGS_KEY, JSON.stringify(settings));
+      }
+
+      loadReminder() {
+        try {
+          return JSON.parse(localStorage.getItem(StorageManager.REMINDER_KEY)) || { enabled: false, time: "08:00" };
+        } catch (error) {
+          return { enabled: false, time: "08:00" };
+        }
+      }
+
+      saveReminder(reminder) {
+        localStorage.setItem(StorageManager.REMINDER_KEY, JSON.stringify(reminder));
       }
     }
 
@@ -286,6 +387,7 @@
 
           if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
           this.reference = firebase.database().ref("weightTrackerRecords");
+          this.settingsReference = firebase.database().ref("weightTrackerSettings");
           this.reference.on("value", (snapshot) => {
             const remoteData = snapshot.val();
             if (remoteData === null && isInitialLoad && localRecords.length) {
@@ -317,6 +419,30 @@
         });
         return true;
       }
+
+      connectSettings(localSettings, onSettingsReceived, onStatusChanged) {
+        if (!this.settingsReference) {
+          onStatusChanged("⚠️ 離線模式：目標只暫存在此裝置", true);
+          return;
+        }
+        let isInitialLoad = true;
+        this.settingsReference.on("value", (snapshot) => {
+          const remoteSettings = snapshot.val();
+          if (remoteSettings === null && isInitialLoad && localSettings.goalWeight) {
+            isInitialLoad = false;
+            this.saveSettings(localSettings);
+            return;
+          }
+          isInitialLoad = false;
+          onSettingsReceived(remoteSettings || {});
+        }, () => onStatusChanged("⚠️ 離線模式：目標只暫存在此裝置", true));
+      }
+
+      saveSettings(settings) {
+        if (!this.settingsReference) return false;
+        this.settingsReference.set(settings).catch((error) => console.warn("Firebase 目標儲存失敗：", error));
+        return true;
+      }
     }
 
     /** 邏輯層：驗證、排序與管理體重資料，不直接操作畫面。 */
@@ -339,11 +465,11 @@
       normalizeRecords(records) {
         return records
           .filter((record) => record && Number.isFinite(Number(record.weight)) && !Number.isNaN(new Date(record.recordedAt).getTime()))
-          .map((record) => ({ id: String(record.id), weight: Number(record.weight), recordedAt: record.recordedAt }))
+          .map((record) => ({ id: String(record.id), weight: Number(record.weight), recordedAt: record.recordedAt, note: typeof record.note === "string" ? record.note.slice(0, 80) : "" }))
           .sort((first, second) => new Date(first.recordedAt) - new Date(second.recordedAt));
       }
 
-      addRecord(weightValue, recordedAtValue) {
+      addRecord(weightValue, recordedAtValue, noteValue = "") {
         const weight = Number(weightValue);
         const recordedAt = new Date(recordedAtValue);
 
@@ -357,7 +483,8 @@
         this.records.push({
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           weight: Math.round(weight * 10) / 10,
-          recordedAt: recordedAt.toISOString()
+          recordedAt: recordedAt.toISOString(),
+          note: String(noteValue).trim().slice(0, 80)
         });
         this.records.sort((first, second) => new Date(first.recordedAt) - new Date(second.recordedAt));
         return this.persist();
@@ -378,6 +505,39 @@
       persist() {
         this.storageManager.saveRecords(this.records);
         return this.firebaseSyncManager.saveRecords(this.records);
+      }
+    }
+
+    /** 目標資料邏輯：目標會與體重紀錄一樣同步至雲端。 */
+    class GoalManager {
+      constructor(storageManager, firebaseSyncManager) {
+        this.storageManager = storageManager;
+        this.firebaseSyncManager = firebaseSyncManager;
+        this.settings = { goalWeight: null, ...storageManager.loadSettings() };
+      }
+
+      initialize(onGoalChanged, onStatusChanged) {
+        this.firebaseSyncManager.connectSettings(this.settings, (remoteSettings) => {
+          this.settings = { goalWeight: null, ...remoteSettings };
+          this.storageManager.saveSettings(this.settings);
+          onGoalChanged();
+        }, onStatusChanged);
+      }
+
+      setGoalWeight(value) {
+        if (value === "") {
+          this.settings.goalWeight = null;
+        } else {
+          const goalWeight = Number(value);
+          if (!Number.isFinite(goalWeight) || goalWeight < 20 || goalWeight > 400) throw new Error("請輸入介於 20 至 400 公斤的有效目標。");
+          this.settings.goalWeight = Math.round(goalWeight * 10) / 10;
+        }
+        this.storageManager.saveSettings(this.settings);
+        return this.firebaseSyncManager.saveSettings(this.settings);
+      }
+
+      getGoalWeight() {
+        return Number.isFinite(Number(this.settings.goalWeight)) ? Number(this.settings.goalWeight) : null;
       }
     }
 
@@ -427,18 +587,93 @@
       }
     }
 
+    /** 裝置功能層：管理此裝置的瀏覽器量測提醒。 */
+    class ReminderManager {
+      constructor(storageManager) {
+        this.storageManager = storageManager;
+        this.timerId = null;
+        this.settings = storageManager.loadReminder();
+      }
+
+      getSettings() {
+        return { ...this.settings };
+      }
+
+      async save(enabled, time) {
+        if (enabled) {
+          if (!("Notification" in window)) throw new Error("此瀏覽器不支援通知提醒。");
+          const permission = await Notification.requestPermission();
+          if (permission !== "granted") throw new Error("尚未取得通知權限，無法開啟提醒。");
+        }
+        this.settings = { enabled, time: /^\d{2}:\d{2}$/.test(time) ? time : "08:00" };
+        this.storageManager.saveReminder(this.settings);
+        this.schedule();
+      }
+
+      schedule() {
+        window.clearTimeout(this.timerId);
+        if (!this.settings.enabled) return;
+        const [hours, minutes] = this.settings.time.split(":").map(Number);
+        const nextReminder = new Date();
+        nextReminder.setHours(hours, minutes, 0, 0);
+        if (nextReminder <= new Date()) nextReminder.setDate(nextReminder.getDate() + 1);
+        this.timerId = window.setTimeout(() => {
+          new Notification("暖心體重日記", { body: "今天也花一分鐘，記錄一下現在的自己吧。" });
+          this.schedule();
+        }, nextReminder.getTime() - Date.now());
+      }
+    }
+
+    /** 工具層：將目前資料整理為可下載的 CSV 與 JSON 備份。 */
+    class DataExporter {
+      download(filename, content, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      }
+
+      exportCsv(records) {
+        const escapeCell = (value) => {
+          const text = String(value ?? "");
+          const safeText = /^[=+\-@]/.test(text) ? `'${text}` : text;
+          return `"${safeText.replaceAll('"', '""')}"`;
+        };
+        const rows = records.map((record) => [record.weight.toFixed(1), record.recordedAt, record.note || ""].map(escapeCell).join(","));
+        this.download(`體重紀錄_${this.dateStamp()}.csv`, `\uFEFF體重(公斤),量測時間,備註\n${rows.join("\n")}`, "text/csv;charset=utf-8");
+      }
+
+      exportBackup(records, goalWeight) {
+        const backup = { exportedAt: new Date().toISOString(), goalWeight, records };
+        this.download(`體重日記備份_${this.dateStamp()}.json`, JSON.stringify(backup, null, 2), "application/json");
+      }
+
+      dateStamp() {
+        return new Date().toISOString().slice(0, 10);
+      }
+    }
+
     /** 介面層：統一處理 DOM 事件與畫面渲染。 */
     class UIManager {
-      constructor(tracker, advisorEngine) {
+      constructor(tracker, advisorEngine, goalManager, reminderManager, dataExporter) {
         this.tracker = tracker;
         this.advisorEngine = advisorEngine;
+        this.goalManager = goalManager;
+        this.reminderManager = reminderManager;
+        this.dataExporter = dataExporter;
         this.elements = {
-          form: document.querySelector("#recordForm"), weightInput: document.querySelector("#weightInput"), recordedAtInput: document.querySelector("#recordedAtInput"),
+          form: document.querySelector("#recordForm"), weightInput: document.querySelector("#weightInput"), recordedAtInput: document.querySelector("#recordedAtInput"), noteInput: document.querySelector("#noteInput"),
           formMessage: document.querySelector("#formMessage"), latestWeight: document.querySelector("#latestWeight"), latestDate: document.querySelector("#latestDate"),
           recentChange: document.querySelector("#recentChange"), recentChangeDetail: document.querySelector("#recentChangeDetail"), averageWeight: document.querySelector("#averageWeight"),
           averageDetail: document.querySelector("#averageDetail"), historyContent: document.querySelector("#historyContent"), recordCount: document.querySelector("#recordCount"),
           trendBadge: document.querySelector("#trendBadge"), advisorContent: document.querySelector("#advisorContent"), trendChart: document.querySelector("#trendChart"),
-          syncStatus: document.querySelector("#syncStatus")
+          syncStatus: document.querySelector("#syncStatus"), goalForm: document.querySelector("#goalForm"), goalWeightInput: document.querySelector("#goalWeightInput"),
+          goalProgressFill: document.querySelector("#goalProgressFill"), goalSummary: document.querySelector("#goalSummary"), weeklyReport: document.querySelector("#weeklyReport"),
+          reportNote: document.querySelector("#reportNote"), reminderEnabled: document.querySelector("#reminderEnabled"), reminderTime: document.querySelector("#reminderTime"),
+          saveReminderButton: document.querySelector("#saveReminderButton"), toolMessage: document.querySelector("#toolMessage"), exportCsvButton: document.querySelector("#exportCsvButton"), exportJsonButton: document.querySelector("#exportJsonButton")
         };
       }
 
@@ -447,18 +682,28 @@
         this.bindEvents();
         this.render();
         this.tracker.initialize(() => this.render(), (message, isOffline) => this.setSyncStatus(message, isOffline));
+        this.goalManager.initialize(() => this.renderGoal(this.tracker.getRecords()), (message, isOffline) => this.setSyncStatus(message, isOffline));
+        const reminder = this.reminderManager.getSettings();
+        this.elements.reminderEnabled.checked = reminder.enabled;
+        this.elements.reminderTime.value = reminder.time;
+        this.reminderManager.schedule();
       }
 
       bindEvents() {
         this.elements.form.addEventListener("submit", (event) => this.handleSubmit(event));
         this.elements.historyContent.addEventListener("click", (event) => this.handleHistoryClick(event));
+        this.elements.goalForm.addEventListener("submit", (event) => this.handleGoalSubmit(event));
+        this.elements.saveReminderButton.addEventListener("click", () => this.handleReminderSave());
+        this.elements.exportCsvButton.addEventListener("click", () => this.handleCsvExport());
+        this.elements.exportJsonButton.addEventListener("click", () => this.handleJsonExport());
       }
 
       handleSubmit(event) {
         event.preventDefault();
         try {
-          const syncStarted = this.tracker.addRecord(this.elements.weightInput.value, this.elements.recordedAtInput.value);
+          const syncStarted = this.tracker.addRecord(this.elements.weightInput.value, this.elements.recordedAtInput.value, this.elements.noteInput.value);
           this.elements.weightInput.value = "";
+          this.elements.noteInput.value = "";
           this.setCurrentDateTime();
           this.setMessage(syncStarted ? "已儲存，正在同步至雲端。" : "已儲存於此裝置；等待雲端連線。", true);
           this.render();
@@ -476,11 +721,44 @@
         this.render();
       }
 
+      handleGoalSubmit(event) {
+        event.preventDefault();
+        try {
+          const syncStarted = this.goalManager.setGoalWeight(this.elements.goalWeightInput.value);
+          this.setMessage(syncStarted ? "目標已儲存，正在同步至雲端。" : "目標已儲存於此裝置。", true);
+          this.renderGoal(this.tracker.getRecords());
+        } catch (error) {
+          this.setMessage(error.message, false);
+        }
+      }
+
+      async handleReminderSave() {
+        try {
+          await this.reminderManager.save(this.elements.reminderEnabled.checked, this.elements.reminderTime.value);
+          this.setToolMessage(this.elements.reminderEnabled.checked ? "提醒已設定；頁面開啟期間會在指定時間通知你。" : "已關閉每日提醒。");
+        } catch (error) {
+          this.elements.reminderEnabled.checked = false;
+          this.setToolMessage(error.message);
+        }
+      }
+
+      handleCsvExport() {
+        this.dataExporter.exportCsv(this.tracker.getRecords());
+        this.setToolMessage("CSV 已開始下載，可用 Excel 或試算表開啟。");
+      }
+
+      handleJsonExport() {
+        this.dataExporter.exportBackup(this.tracker.getRecords(), this.goalManager.getGoalWeight());
+        this.setToolMessage("完整 JSON 備份已開始下載，請妥善保存。");
+      }
+
       render() {
         const records = this.tracker.getRecords();
         this.renderOverview(records);
         this.renderHistory(records);
         this.renderAdvice(records);
+        this.renderGoal(records);
+        this.renderWeeklyReport(records);
         this.renderChart(records);
       }
 
@@ -506,6 +784,59 @@
         }
       }
 
+      renderGoal(records) {
+        const goalWeight = this.goalManager.getGoalWeight();
+        const latestRecord = records.at(-1);
+        this.elements.goalWeightInput.value = goalWeight ?? "";
+
+        if (goalWeight === null) {
+          this.elements.goalProgressFill.style.width = "0%";
+          this.elements.goalSummary.textContent = "設定一個目標，讓每次紀錄都有方向。";
+          return;
+        }
+        if (!latestRecord) {
+          this.elements.goalProgressFill.style.width = "0%";
+          this.elements.goalSummary.innerHTML = `目標是 <strong>${goalWeight.toFixed(1)} kg</strong>；新增第一筆紀錄後，就能開始追蹤進度。`;
+          return;
+        }
+
+        const startingWeight = records[0].weight;
+        const totalDistance = Math.abs(startingWeight - goalWeight);
+        const remainingDistance = Math.abs(latestRecord.weight - goalWeight);
+        const progress = totalDistance === 0 ? 100 : Math.max(0, Math.min(100, ((totalDistance - remainingDistance) / totalDistance) * 100));
+        const action = goalWeight < latestRecord.weight ? "距離目標還有" : "距離目標還差";
+        this.elements.goalProgressFill.style.width = `${progress}%`;
+        this.elements.goalSummary.innerHTML = `目前 <strong>${latestRecord.weight.toFixed(1)} kg</strong>，${action} <strong>${remainingDistance.toFixed(1)} kg</strong>（已完成 ${Math.round(progress)}%）。`;
+      }
+
+      renderWeeklyReport(records) {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const weeklyRecords = records.filter((record) => new Date(record.recordedAt) >= sevenDaysAgo);
+        const average = weeklyRecords.length ? weeklyRecords.reduce((sum, record) => sum + record.weight, 0) / weeklyRecords.length : null;
+        const change = weeklyRecords.length >= 2 ? weeklyRecords.at(-1).weight - weeklyRecords[0].weight : null;
+        const changeText = change === null ? "—" : `${change > 0 ? "+" : ""}${change.toFixed(1)} kg`;
+        this.elements.weeklyReport.innerHTML = `<div class="report-item"><span>量測次數</span><strong>${weeklyRecords.length} 次</strong></div><div class="report-item"><span>本週平均</span><strong>${average === null ? "—" : `${average.toFixed(1)} kg`}</strong></div><div class="report-item"><span>本週變化</span><strong>${changeText}</strong></div><div class="report-item"><span>連續紀錄</span><strong>${this.countRecentRecordingDays(records)} 天</strong></div>`;
+        if (!weeklyRecords.length) {
+          this.elements.reportNote.textContent = "本週還沒有紀錄；從今天開始，為自己留下一筆溫柔的觀察。";
+        } else if (weeklyRecords.length === 1) {
+          this.elements.reportNote.textContent = "本週已有第一筆紀錄，再多一兩筆就能看見更可靠的變化。";
+        } else {
+          this.elements.reportNote.textContent = change < -0.2 ? "本週呈現下降趨勢，保持規律吃、規律動就很好。" : change > 0.2 ? "本週稍有上升，先留意睡眠、鹽分與週末飲食，不需要責怪自己。" : "本週變化平穩，穩定紀錄就是很棒的進展。";
+        }
+      }
+
+      countRecentRecordingDays(records) {
+        const uniqueDays = new Set(records.map((record) => new Date(record.recordedAt).toDateString()));
+        let count = 0;
+        const cursor = new Date();
+        while (uniqueDays.has(cursor.toDateString())) {
+          count += 1;
+          cursor.setDate(cursor.getDate() - 1);
+        }
+        return count;
+      }
+
       renderHistory(records) {
         this.elements.recordCount.textContent = `${records.length} 筆紀錄`;
         if (!records.length) {
@@ -519,9 +850,9 @@
           const change = previousRecord ? record.weight - previousRecord.weight : null;
           const changeText = change === null ? "起始紀錄" : `${change > 0 ? "+" : ""}${change.toFixed(1)} kg`;
           const changeClass = change > 0 ? "positive" : change < 0 ? "negative" : "";
-          return `<tr><td class="weight-cell">${record.weight.toFixed(1)} kg</td><td>${this.formatDateTime(record.recordedAt)}</td><td class="change-cell ${changeClass}">${changeText}</td><td><button class="delete-button" type="button" data-delete-id="${record.id}" aria-label="刪除 ${record.weight.toFixed(1)} 公斤的紀錄">刪除</button></td></tr>`;
+          return `<tr><td class="weight-cell">${record.weight.toFixed(1)} kg</td><td>${this.formatDateTime(record.recordedAt)}</td><td>${this.escapeHtml(record.note || "—")}</td><td class="change-cell ${changeClass}">${changeText}</td><td><button class="delete-button" type="button" data-delete-id="${this.escapeHtml(record.id)}" aria-label="刪除 ${record.weight.toFixed(1)} 公斤的紀錄">刪除</button></td></tr>`;
         }).join("");
-        this.elements.historyContent.innerHTML = `<table><caption class="sr-only">體重歷史紀錄</caption><thead><tr><th scope="col">體重</th><th scope="col">量測時間</th><th scope="col">與前筆差異</th><th scope="col"><span class="sr-only">操作</span></th></tr></thead><tbody>${rows}</tbody></table>`;
+        this.elements.historyContent.innerHTML = `<table><caption class="sr-only">體重歷史紀錄</caption><thead><tr><th scope="col">體重</th><th scope="col">量測時間</th><th scope="col">備註</th><th scope="col">與前筆差異</th><th scope="col"><span class="sr-only">操作</span></th></tr></thead><tbody>${rows}</tbody></table>`;
       }
 
       renderAdvice(records) {
@@ -561,6 +892,14 @@
         this.elements.syncStatus.classList.toggle("is-offline", isOffline);
       }
 
+      setToolMessage(message) {
+        this.elements.toolMessage.textContent = message;
+      }
+
+      escapeHtml(value) {
+        return String(value).replace(/[&<>"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character]);
+      }
+
       formatDateTime(isoString) {
         return new Intl.DateTimeFormat("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(isoString));
       }
@@ -571,7 +910,15 @@
     }
 
     // 組裝各層模組，程式入口只負責啟動應用程式。
-    const app = new UIManager(new WeightTracker(new StorageManager(), new FirebaseSyncManager()), new AdvisorEngine());
+    const storageManager = new StorageManager();
+    const firebaseSyncManager = new FirebaseSyncManager();
+    const app = new UIManager(
+      new WeightTracker(storageManager, firebaseSyncManager),
+      new AdvisorEngine(),
+      new GoalManager(storageManager, firebaseSyncManager),
+      new ReminderManager(storageManager),
+      new DataExporter()
+    );
     app.initialize();
   </script>
 </body>
