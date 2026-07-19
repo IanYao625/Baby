@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#5b5ce2">
   <title>體重趨勢日誌</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <style>
     :root {
       --brand: #5b5ce2;
@@ -60,6 +62,7 @@
       font-size: .84rem;
       font-weight: 700;
     }
+    .privacy-note.is-offline { border-color: #f7d8a2; color: #9a6410; background: #fff7e7; }
 
     .dashboard { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .85fr); gap: 22px; align-items: start; }
     .main-column, .side-column { display: grid; gap: 22px; }
@@ -184,7 +187,7 @@
         <h1>體重趨勢日誌</h1>
         <p class="subtitle">以簡單、持續的紀錄看懂身體變化，取得更貼近目前狀態的飲食與運動方向。</p>
       </div>
-      <p class="privacy-note">🔒 資料只儲存在此瀏覽器</p>
+      <p id="syncStatus" class="privacy-note" role="status">☁️ 正在連線雲端…</p>
     </header>
 
     <section class="dashboard" aria-label="體重管理儀表板">
@@ -240,7 +243,7 @@
   <script>
     "use strict";
 
-    /** 資料層：唯一處理瀏覽器本機儲存的入口。 */
+    /** 資料層：處理瀏覽器快取，讓暫時離線時仍可讀取資料。 */
     class StorageManager {
       static STORAGE_KEY = "weight-tracker-records-v1";
 
@@ -260,11 +263,77 @@
       }
     }
 
+    /** 雲端資料層：沿用舊版 Firebase Realtime Database v9 compat。 */
+    class FirebaseSyncManager {
+      constructor() {
+        this.reference = null;
+        this.statusCallback = null;
+      }
+
+      connect(localRecords, onRecordsReceived, onStatusChanged) {
+        this.statusCallback = onStatusChanged;
+        let isInitialLoad = true;
+        try {
+          const firebaseConfig = {
+            apiKey: "AIzaSyA0ihW3ZPIrEHLPay1_psV_qrUn9jqAtuU",
+            authDomain: "babyhan-11286.firebaseapp.com",
+            databaseURL: "https://babyhan-11286-default-rtdb.firebaseio.com",
+            projectId: "babyhan-11286",
+            storageBucket: "babyhan-11286.firebasestorage.app",
+            messagingSenderId: "972062726412",
+            appId: "1:972062726412:web:ef33e8cfb60305f388d129"
+          };
+
+          if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+          this.reference = firebase.database().ref("weightTrackerRecords");
+          this.reference.on("value", (snapshot) => {
+            const remoteData = snapshot.val();
+            if (remoteData === null && isInitialLoad && localRecords.length) {
+              isInitialLoad = false;
+              this.saveRecords(localRecords);
+              return;
+            }
+            isInitialLoad = false;
+            const records = Array.isArray(remoteData) ? remoteData : Object.values(remoteData || {});
+            onRecordsReceived(records);
+            onStatusChanged("☁️ 已與雲端同步", false);
+          }, (error) => {
+            console.warn("Firebase 讀取失敗：", error);
+            onStatusChanged("⚠️ 離線模式：資料暫存此裝置", true);
+          });
+        } catch (error) {
+          console.warn("Firebase 初始化失敗：", error);
+          onStatusChanged("⚠️ 離線模式：資料暫存此裝置", true);
+        }
+      }
+
+      saveRecords(records) {
+        if (!this.reference) return false;
+        this.reference.set(records).then(() => {
+          this.statusCallback?.("☁️ 已與雲端同步", false);
+        }).catch((error) => {
+          console.warn("Firebase 儲存失敗：", error);
+          this.statusCallback?.("⚠️ 離線模式：資料暫存此裝置", true);
+        });
+        return true;
+      }
+    }
+
     /** 邏輯層：驗證、排序與管理體重資料，不直接操作畫面。 */
     class WeightTracker {
-      constructor(storageManager) {
+      constructor(storageManager, firebaseSyncManager) {
         this.storageManager = storageManager;
+        this.firebaseSyncManager = firebaseSyncManager;
         this.records = this.normalizeRecords(storageManager.loadRecords());
+      }
+
+      initialize(onRecordsChanged, onStatusChanged) {
+        onRecordsChanged();
+        this.firebaseSyncManager.connect(this.records, (remoteRecords) => {
+          this.records = this.normalizeRecords(remoteRecords);
+          this.storageManager.saveRecords(this.records);
+          onRecordsChanged();
+        }, onStatusChanged);
       }
 
       normalizeRecords(records) {
@@ -291,7 +360,7 @@
           recordedAt: recordedAt.toISOString()
         });
         this.records.sort((first, second) => new Date(first.recordedAt) - new Date(second.recordedAt));
-        this.persist();
+        return this.persist();
       }
 
       deleteRecord(recordId) {
@@ -308,6 +377,7 @@
 
       persist() {
         this.storageManager.saveRecords(this.records);
+        return this.firebaseSyncManager.saveRecords(this.records);
       }
     }
 
@@ -367,7 +437,8 @@
           formMessage: document.querySelector("#formMessage"), latestWeight: document.querySelector("#latestWeight"), latestDate: document.querySelector("#latestDate"),
           recentChange: document.querySelector("#recentChange"), recentChangeDetail: document.querySelector("#recentChangeDetail"), averageWeight: document.querySelector("#averageWeight"),
           averageDetail: document.querySelector("#averageDetail"), historyContent: document.querySelector("#historyContent"), recordCount: document.querySelector("#recordCount"),
-          trendBadge: document.querySelector("#trendBadge"), advisorContent: document.querySelector("#advisorContent"), trendChart: document.querySelector("#trendChart")
+          trendBadge: document.querySelector("#trendBadge"), advisorContent: document.querySelector("#advisorContent"), trendChart: document.querySelector("#trendChart"),
+          syncStatus: document.querySelector("#syncStatus")
         };
       }
 
@@ -375,6 +446,7 @@
         this.setCurrentDateTime();
         this.bindEvents();
         this.render();
+        this.tracker.initialize(() => this.render(), (message, isOffline) => this.setSyncStatus(message, isOffline));
       }
 
       bindEvents() {
@@ -385,10 +457,10 @@
       handleSubmit(event) {
         event.preventDefault();
         try {
-          this.tracker.addRecord(this.elements.weightInput.value, this.elements.recordedAtInput.value);
+          const syncStarted = this.tracker.addRecord(this.elements.weightInput.value, this.elements.recordedAtInput.value);
           this.elements.weightInput.value = "";
           this.setCurrentDateTime();
-          this.setMessage("已儲存這筆體重紀錄。", true);
+          this.setMessage(syncStarted ? "已儲存，正在同步至雲端。" : "已儲存於此裝置；等待雲端連線。", true);
           this.render();
         } catch (error) {
           this.setMessage(error.message, false);
@@ -399,8 +471,8 @@
         const deleteButton = event.target.closest("[data-delete-id]");
         if (!deleteButton) return;
         if (!window.confirm("確定要刪除這筆體重紀錄嗎？")) return;
-        this.tracker.deleteRecord(deleteButton.dataset.deleteId);
-        this.setMessage("已刪除紀錄。", true);
+        const syncStarted = this.tracker.deleteRecord(deleteButton.dataset.deleteId);
+        this.setMessage(syncStarted ? "已刪除，正在同步至雲端。" : "已從此裝置刪除；等待雲端連線。", true);
         this.render();
       }
 
@@ -484,6 +556,11 @@
         this.elements.formMessage.classList.toggle("is-success", isSuccess);
       }
 
+      setSyncStatus(message, isOffline) {
+        this.elements.syncStatus.textContent = message;
+        this.elements.syncStatus.classList.toggle("is-offline", isOffline);
+      }
+
       formatDateTime(isoString) {
         return new Intl.DateTimeFormat("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(isoString));
       }
@@ -494,7 +571,7 @@
     }
 
     // 組裝各層模組，程式入口只負責啟動應用程式。
-    const app = new UIManager(new WeightTracker(new StorageManager()), new AdvisorEngine());
+    const app = new UIManager(new WeightTracker(new StorageManager(), new FirebaseSyncManager()), new AdvisorEngine());
     app.initialize();
   </script>
 </body>
